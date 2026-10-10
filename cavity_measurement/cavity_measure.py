@@ -1,4 +1,4 @@
-"""Planar cavity-opening metrology. Python 3.10+, NumPy, OpenCV.
+"""Complete cavity-opening contour detection and planar line metrology.
 
 Run ``python cavity_measure.py --help``. All image coordinates use x,y order.
 The four independent fitted lines describe the virtual sharp-corner opening,
@@ -537,15 +537,106 @@ def measure_array(image, settings=None, calibration=None, corners=None, roi=None
     return report, overlay, rows
 
 
+def contour_array(image, calibration=None, roi=None):
+    """Identify the complete opening outline; dimensional validation is separate."""
+    from opening_contour import find_opening
+    if image is None or image.dtype != np.uint8 or image.ndim not in (2, 3):
+        raise MeasurementError("Expected an 8-bit grayscale or BGR image")
+    height, width = image.shape[:2]
+    h_mm = check_calibration(calibration, [width, height])
+    if calibration and "camera_matrix" in calibration:
+        k = np.asarray(calibration["camera_matrix"], np.float64)
+        d = np.asarray(calibration["dist_coeffs"], np.float64)
+        image = cv2.undistort(image, k, d, None, k)
+        if roi is not None:
+            x, y, w, h = map(int, roi)
+            if min(x, y) < 0 or min(w, h) <= 0 or x+w > width or y+h > height:
+                raise MeasurementError("ROI outside original image")
+            rr = undistort_points([[x,y], [x+w,y], [x+w,y+h], [x,y+h]], calibration)
+            lo = np.maximum(np.floor(rr.min(axis=0)), 0).astype(int)
+            hi = np.minimum(np.ceil(rr.max(axis=0)), [width,height]).astype(int)
+            roi = [*lo.tolist(), *(hi-lo).tolist()]
+    gray = image if image.ndim == 2 else cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    contour = find_opening(gray, roi)
+    points = np.asarray(contour["points_px"], np.float64)
+    if h_mm is not None:
+        contour["points_mm"] = transform_points(points, h_mm).tolist()
+    report = {
+        "schema_version": 2, "status": "contour_detected", "dimensions": None,
+        "unit": "px", "measurement_status": "not_performed", "quality_reasons": [],
+        "image_size": [width, height], "initialization": "automatic_dark_rim",
+        "coordinate_system": "undistorted_full_image_px" if calibration and "camera_matrix" in calibration
+                             else "original_full_image_px",
+        "contour": contour, "calibration": calibration,
+        "notes": [
+            "Complete opening contour detected, including rounded corners. Dimensional measurement was not performed.",
+            "The selected optical transition requires confirmation against the physical opening; it may be a shadow or chamfer.",
+            "Convexity initializes the search only. Continuity tracking regularizes the result; weak segments are marked yellow.",
+            "Pixel contours and successful regression checks do not establish metric accuracy or uncertainty.",
+        ],
+        "software": {"opencv": cv2.__version__, "numpy": np.__version__},
+    }
+    overlay = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
+    integer_points = np.rint(points).astype(np.int32)
+    line_width = max(2, int(round(max(width, height)/1400*2)))
+    cv2.polylines(overlay, [integer_points], True, (0, 240, 0), line_width, cv2.LINE_AA)
+    supported = contour["directly_supported"]
+    for i, good in enumerate(supported):
+        if not good:
+            cv2.line(overlay, tuple(integer_points[i]), tuple(integer_points[(i+1) % len(points)]),
+                     (0, 220, 255), line_width+1, cv2.LINE_AA)
+    factor = max(1., width/1600)
+    cv2.rectangle(overlay, (0, 0), (width, int(55*factor)), (20, 20, 20), -1)
+    label = f"CONTOUR DETECTED  support={contour['quality']['supported_fraction']:.1%}  dimensions=not measured"
+    cv2.putText(overlay, label, (int(12*factor), int(36*factor)), cv2.FONT_HERSHEY_SIMPLEX,
+                0.7*factor, (80, 240, 80), max(1, int(2*factor)), cv2.LINE_AA)
+    return report, overlay, []
+
+
+def analyze_array(image, settings=None, calibration=None, corners=None, roi=None, detection="auto"):
+    """Prefer a complete dark rim in auto mode; keep strict line metrology available."""
+    from opening_contour import NoContourFound
+    if detection not in ("auto", "outline", "strict"):
+        raise MeasurementError("detection must be auto, outline, or strict")
+    if settings is not None:
+        settings.validate()
+    if corners is not None and detection == "outline":
+        raise MeasurementError("--corners initializes line metrology; use --roi for complete-outline detection")
+    if detection != "strict" and corners is None:
+        try:
+            return contour_array(image, calibration, roi)
+        except NoContourFound:
+            if detection == "outline":
+                raise
+    return measure_array(image, settings, calibration, corners, roi)
+
+
 def save_measurement(out, report, overlay, rows):
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
     write_json(out / "result.json", report)
     write_image(out / "overlay.png", overlay)
-    with open(out / "edge_points.csv", "w", encoding="utf-8-sig", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow(["edge", "x_px", "y_px", "ransac_inlier", "x_mm", "y_mm"])
-        writer.writerows(rows)
+    if "contour" in report:
+        contour = report["contour"]
+        mask = np.zeros(overlay.shape[:2], np.uint8)
+        cv2.fillPoly(mask, [np.rint(contour["points_px"]).astype(np.int32)], 255)
+        write_image(out / "contour_mask.png", mask)
+        with open(out / "contour_points.csv", "w", encoding="utf-8-sig", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(["index", "x_px", "y_px", "gradient_gray_per_px", "directly_supported", "x_mm", "y_mm"])
+            for i, (point, gradient, supported) in enumerate(zip(contour["points_px"],
+                    contour["gradient_gray_per_px"], contour["directly_supported"])):
+                world = contour.get("points_mm")
+                writer.writerow([i, *point, gradient, int(supported),
+                                 world[i][0] if world else "", world[i][1] if world else ""])
+    if "edges" in report:
+        with open(out / "edge_points.csv", "w", encoding="utf-8-sig", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(["edge", "x_px", "y_px", "ransac_inlier", "x_mm", "y_mm"])
+            writer.writerows(rows)
+    scale = min(1., 1600/max(overlay.shape[:2]))
+    preview = cv2.resize(overlay, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+    write_image(out / "overlay_preview.jpg", preview)
 
 
 def build_planar_calibration(image, point_spec, intrinsics=None):
@@ -600,6 +691,8 @@ def main(argv=None):
     m.add_argument("--config", type=Path, help="JSON object of Settings overrides")
     m.add_argument("--polarity", choices=["dark","bright","auto"])
     m.add_argument("--band-px", type=float)
+    m.add_argument("--detection", choices=["auto", "outline", "strict"], default="auto",
+                   help="auto: prefer complete dark rim; outline: contour only; strict: original line metrology")
     c = sub.add_parser("calibrate", help="Fit planar pixel-to-mm mapping from independent reference points")
     c.add_argument("--image", required=True, type=Path)
     c.add_argument("--points", required=True, type=Path)
@@ -633,13 +726,17 @@ def main(argv=None):
         if args.mm_per_pixel is not None:
             calibration = {"method":"user_scalar_scale", "mm_per_pixel":args.mm_per_pixel}
         corners = read_json(args.corners)["corners_px"] if args.corners else None
-        report, overlay, rows = measure_array(read_image(args.image), Settings(**config),
-                                              calibration, corners, args.roi)
+        report, overlay, rows = analyze_array(read_image(args.image), Settings(**config),
+                                              calibration, corners, args.roi, args.detection)
         report["input_image"] = str(args.image.resolve())
         save_measurement(args.out, report, overlay, rows)
-        print(json.dumps({"status":report["status"], "dimensions":report["dimensions"],
-                          "quality_reasons":report["quality_reasons"], "output":str(args.out.resolve())},
-                         ensure_ascii=False, allow_nan=False))
+        summary = {"status": report["status"], "dimensions": report["dimensions"],
+                   "quality_reasons": report["quality_reasons"], "output": str(args.out.resolve())}
+        if "contour" in report:
+            summary.update({"message": "腔体开口完整轮廓识别成功（含圆角）；本次未执行尺寸计量。",
+                            "contour_point_count": report["contour"]["point_count"],
+                            "supported_fraction": report["contour"]["quality"]["supported_fraction"]})
+        print(json.dumps(summary, ensure_ascii=False, allow_nan=False))
         return 2 if report["status"] == "review_required" else 0
     except (ValueError, OSError, KeyError, TypeError, cv2.error) as exc:
         error = {"status":"failed", "dimensions":None, "error":str(exc)}

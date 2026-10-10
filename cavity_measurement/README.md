@@ -1,15 +1,46 @@
-# 圆角方腔腔口尺寸检测工具
+# 圆角方腔开口轮廓识别与尺寸检测工具
 
-本工具测量干燥、无切削液和切屑遮挡条件下的**腔口长宽**，支持平面内旋转。
-它实现前面讨论的“标定 → 定位 → 亚像素边缘 → 四边独立拟合 → 对边间距”路线。
-这是一份可以运行和集成的工程代码；当前验证数据是合成图像，真实零件的测量精度需另行验证。
+默认优先识别**腔体开口的完整边界（含圆角）**，适用于当前四张实拍图中可见的深色边界带。
+保留原有“标定 → 定位 → 亚像素边缘 → 四边独立拟合 → 对边间距”的尺寸检测流程。
+完整轮廓已在用户提供的四张实拍图上进行回归验证；尺寸算法另有合成测试。
+四张实拍图用于本轮开发调参，不能作为独立测试集，也没有提供可追溯的尺寸真值。
+
+## 四张实拍图与以后复查
+
+把图片拖到原来的 `measure_image.cmd` 上即可。未标定时，比例输入直接回车。
+程序通过暗边带定位、凸轮廓初始化、原图灰度法向剖面连续跟踪，输出四条直边和圆角组成的闭合轮廓。
+定位时使用的凸性只约束搜索初值；最终轮廓不强制为矩形或圆弧。
+绿色表示达到灰度支持门限的边界，黄色表示证据较弱且受连续性约束的段落。
+当前约定识别深色开口边界带的**外侧灰度过渡**。它是否对应实际开口、倒角或阴影，需要结合工件确认。
+
+新状态 `contour_detected` 表示完整轮廓识别成功，退出码为 0。
+此时 `dimensions: null` 和 `measurement_status: not_performed` 是预期结果，表示本轮未执行尺寸计量。
+尺寸不能由轮廓识别成功或四张图回归通过直接推断。
+
+```powershell
+# 只识别完整开口轮廓，失败时不自动改测其他内部区域
+python cavity_measure.py measure --image "..\图片\矩形腔体1.bmp" --detection outline
+
+# 明确调用原有四条直线的尺寸计量流程
+python cavity_measure.py measure --image "D:\图片\腔体.png" --detection strict --calibration calibration.json
+
+# 以后改代码后，用相同的四张图复查
+python verify_baseline.py
+```
+
+也可直接双击 `verify_baseline.cmd`，默认读取程序父目录中的 `图片` 文件夹。
+`baseline/manifest.json` 记录四张原始 BMP 的 SHA-256；`baseline/contour_1.json` 至 `contour_4.json` 保存冻结的回归参考轮廓。
+校验源图哈希后，重新检测并检查参考掩膜重合率和包围盒漂移，结果保存到统一输出位置的 `四图基准验证/时间戳`。
+源图改变时会报哈希不一致，脚本不会自动覆盖参考。
+这些参考是**目视复查后的算法输出**，用于发现后续代码回退，不是人工逐点标注的真值或计量基准。
+原图保留在现有 `图片` 目录中，没有改写或重复存储。
 
 ## 最快开始
 
 在本机直接双击 `run_demo.cmd` 可生成并测量一个合成的 60 × 40 mm 圆角方腔。
 示例运行后，会打开“图片检测结果/合成示例/时间戳/overlay.png”查看标注结果。
 
-当前统一输出位置：`C:\Users\chyew\Desktop\38所\cavity_measurement_source\图片检测结果`。
+当前统一输出位置：`F:\文件\研究生文件\38所\cavity_measurement_source\图片检测结果`。
 测量结果保存到其下的时间戳子目录，合成示例保存到“合成示例/时间戳”，标定文件保存到“标定/时间戳”。
 路径在程序旁的 `output_config.json` 中设置；修改 `output_root` 即可同时改变所有启动方式的默认位置。
 命令行的 `--out` 仍可单独指定位置。复制到其他电脑后，请同步修改该配置。
@@ -28,7 +59,7 @@ python cavity_measure.py demo
 ## 用自己的图测量
 
 **便捷方式：把照片拖到 `measure_image.cmd` 上。**
-脚本询问已知的毫米/像素比例；直接回车则仅输出像素值。每次结果放在“图片检测结果”下独立的时间戳子目录。
+脚本询问已知的毫米/像素比例；未标定直接回车。每次结果放在“图片检测结果”下独立的时间戳子目录。
 如需透视补偿、指定 ROI 或使用标定文件，请使用下面的命令行方式。
 
 ### 1. 已知同一测量平面的像素当量
@@ -51,7 +82,9 @@ python cavity_measure.py measure --image "D:\图片\腔体.png" --mm-per-pixel 0
 python cavity_measure.py measure --image "D:\图片\腔体.png"
 ```
 
-此时状态为 `pixel_only`，尺寸单位明确标为 `px`。
+默认 `--detection auto` 优先识别完整暗边轮廓，成功时为 `contour_detected`；
+找不到这种完整暗边时才进入原有灰度区域/直线测量流程，未标定且检查通过时为 `pixel_only`。
+有多个完整候选或完整轮廓证据不足时会拒绝，不会悄悄换测腔内纹理。
 
 ### 2. 有平面倾斜：用独立参考点进行平面标定
 
@@ -152,7 +185,15 @@ python cavity_measure.py measure --image cavity.png --roi 100 80 800 600 --mm-pe
 
 ## 输出与状态
 
-每次成功运行会输出：
+完整轮廓识别成功时会输出：
+
+- `overlay.png`：原始分辨率的完整轮廓叠加图。
+- `overlay_preview.jpg`：便于打开的小尺寸预览。
+- `contour_mask.png`：开口内部为 255、外部为 0 的填充掩膜。
+- `contour_points.csv`：顺序排列的轮廓坐标、灰度梯度、支持标志及可选毫米坐标；最后一个点与第一个点闭合。
+- `result.json`：完整轮廓、状态、灰度支持指标、识别方法与标定信息。
+
+原有直线尺寸计量成功时会输出：
 
 - `overlay.png`：四边、边缘点、RANSAC 离群点（红色）、拟合残差及测量状态。
 - `result.json`：尺寸、单位、标定信息、四边方程、截面间距和质量检查结果。
@@ -160,6 +201,7 @@ python cavity_measure.py measure --image cavity.png --roi 100 80 800 600 --mm-pe
 
 | `status` | 含义 | CLI 退出码 |
 |---|---|---:|
+| `contour_detected` | 完整开口轮廓识别成功；本次未执行尺寸计量，`dimensions` 为 null | 0 |
 | `measured` | 有毫米标定，当前图像检查通过 | 0 |
 | `pixel_only` | 图像检查通过，只有像素尺寸 | 0 |
 | `review_required` | 已提取边缘，但几何或拟合检查未通过；`dimensions` 为 null | 2 |
@@ -173,11 +215,11 @@ python cavity_measure.py measure --image cavity.png --roi 100 80 800 600 --mm-pe
 ## Python 接口
 
 ```python
-from cavity_measure import Settings, read_image, read_json, measure_array, save_measurement, default_output_path
+from cavity_measure import Settings, read_image, read_json, analyze_array, save_measurement, default_output_path
 
 image = read_image("cavity.png")
 calibration = read_json("calibration.json")
-report, overlay, points = measure_array(image, Settings(), calibration)
+report, overlay, points = analyze_array(image, Settings(), calibration)
 save_measurement(default_output_path(), report, overlay, points)
 if report["status"] == "measured":
     print(report["dimensions"]["length"], report["dimensions"]["width"])
@@ -205,4 +247,5 @@ python -m unittest discover -s tests -v
 具体运行记录见 `VALIDATION.md`。
 
 API 依据：[OpenCV 几何形状接口](https://docs.opencv.org/4.x/d3/dc0/group__imgproc__shape.html)、
-[OpenCV 标定与去畸变接口](https://docs.opencv.org/4.x/d9/d0c/group__calib3d.html)。
+[OpenCV 标定与去畸变接口](https://docs.opencv.org/4.x/d9/d0c/group__calib3d.html)、
+[OpenCV 形态学与黑帽操作](https://docs.opencv.org/4.x/d9/d61/tutorial_py_morphological_ops.html)。
