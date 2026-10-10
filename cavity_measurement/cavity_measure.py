@@ -537,9 +537,9 @@ def measure_array(image, settings=None, calibration=None, corners=None, roi=None
     return report, overlay, rows
 
 
-def contour_array(image, calibration=None, roi=None):
+def contour_array(image, calibration=None, roi=None, boundary_side="inner"):
     """Identify the complete opening outline; dimensional validation is separate."""
-    from opening_contour import find_opening
+    from opening_contour import ContourSettings, find_opening
     if image is None or image.dtype != np.uint8 or image.ndim not in (2, 3):
         raise MeasurementError("Expected an 8-bit grayscale or BGR image")
     height, width = image.shape[:2]
@@ -557,7 +557,7 @@ def contour_array(image, calibration=None, roi=None):
             hi = np.minimum(np.ceil(rr.max(axis=0)), [width,height]).astype(int)
             roi = [*lo.tolist(), *(hi-lo).tolist()]
     gray = image if image.ndim == 2 else cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    contour = find_opening(gray, roi)
+    contour = find_opening(gray, roi, ContourSettings(boundary_side=boundary_side))
     points = np.asarray(contour["points_px"], np.float64)
     if h_mm is not None:
         contour["points_mm"] = transform_points(points, h_mm).tolist()
@@ -569,8 +569,8 @@ def contour_array(image, calibration=None, roi=None):
                              else "original_full_image_px",
         "contour": contour, "calibration": calibration,
         "notes": [
-            "Complete opening contour detected, including rounded corners. Dimensional measurement was not performed.",
-            "The selected optical transition requires confirmation against the physical opening; it may be a shadow or chamfer.",
+            "Complete selected boundary detected, including rounded corners. Dimensional measurement was not performed.",
+            "Inner mode follows target A confirmed by the user: dark band to brighter cavity. Single-view optics do not establish depth or metric accuracy.",
             "Convexity initializes the search only. Continuity tracking regularizes the result; weak segments are marked yellow.",
             "Pixel contours and successful regression checks do not establish metric accuracy or uncertainty.",
         ],
@@ -587,24 +587,26 @@ def contour_array(image, calibration=None, roi=None):
                      (0, 220, 255), line_width+1, cv2.LINE_AA)
     factor = max(1., width/1600)
     cv2.rectangle(overlay, (0, 0), (width, int(55*factor)), (20, 20, 20), -1)
-    label = f"CONTOUR DETECTED  support={contour['quality']['supported_fraction']:.1%}  dimensions=not measured"
+    label = f"{boundary_side.upper()} CONTOUR  support={contour['quality']['supported_fraction']:.1%}  dimensions=not measured"
     cv2.putText(overlay, label, (int(12*factor), int(36*factor)), cv2.FONT_HERSHEY_SIMPLEX,
                 0.7*factor, (80, 240, 80), max(1, int(2*factor)), cv2.LINE_AA)
     return report, overlay, []
 
 
-def analyze_array(image, settings=None, calibration=None, corners=None, roi=None, detection="auto"):
+def analyze_array(image, settings=None, calibration=None, corners=None, roi=None, detection="auto", boundary_side="inner"):
     """Prefer a complete dark rim in auto mode; keep strict line metrology available."""
     from opening_contour import NoContourFound
     if detection not in ("auto", "outline", "strict"):
         raise MeasurementError("detection must be auto, outline, or strict")
+    if boundary_side not in ("inner", "outer"):
+        raise MeasurementError("boundary_side must be inner or outer")
     if settings is not None:
         settings.validate()
     if corners is not None and detection == "outline":
         raise MeasurementError("--corners initializes line metrology; use --roi for complete-outline detection")
     if detection != "strict" and corners is None:
         try:
-            return contour_array(image, calibration, roi)
+            return contour_array(image, calibration, roi, boundary_side)
         except NoContourFound:
             if detection == "outline":
                 raise
@@ -693,6 +695,8 @@ def main(argv=None):
     m.add_argument("--band-px", type=float)
     m.add_argument("--detection", choices=["auto", "outline", "strict"], default="auto",
                    help="auto: prefer complete dark rim; outline: contour only; strict: original line metrology")
+    m.add_argument("--boundary-side", choices=["inner", "outer"], default="inner",
+                   help="inner (default): target A, dark rim to cavity; outer: previous exterior edge")
     c = sub.add_parser("calibrate", help="Fit planar pixel-to-mm mapping from independent reference points")
     c.add_argument("--image", required=True, type=Path)
     c.add_argument("--points", required=True, type=Path)
@@ -727,13 +731,16 @@ def main(argv=None):
             calibration = {"method":"user_scalar_scale", "mm_per_pixel":args.mm_per_pixel}
         corners = read_json(args.corners)["corners_px"] if args.corners else None
         report, overlay, rows = analyze_array(read_image(args.image), Settings(**config),
-                                              calibration, corners, args.roi, args.detection)
+                                              calibration, corners, args.roi, args.detection, args.boundary_side)
         report["input_image"] = str(args.image.resolve())
         save_measurement(args.out, report, overlay, rows)
         summary = {"status": report["status"], "dimensions": report["dimensions"],
                    "quality_reasons": report["quality_reasons"], "output": str(args.out.resolve())}
         if "contour" in report:
-            summary.update({"message": "腔体开口完整轮廓识别成功（含圆角）；本次未执行尺寸计量。",
+            message = ("腔体内部边框识别成功（已确认的 A 边，含圆角）；本次未执行尺寸计量。"
+                       if args.boundary_side == "inner" else
+                       "腔体外围黑边外侧轮廓识别成功（含圆角）；本次未执行尺寸计量。")
+            summary.update({"message": message, "boundary_side": args.boundary_side,
                             "contour_point_count": report["contour"]["point_count"],
                             "supported_fraction": report["contour"]["quality"]["supported_fraction"]})
         print(json.dumps(summary, ensure_ascii=False, allow_nan=False))

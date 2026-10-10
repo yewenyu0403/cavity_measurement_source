@@ -52,7 +52,7 @@ def scene(two_complete=False, clipped=False):
 class ContourTests(unittest.TestCase):
     def test_complete_rounded_boundary_ignores_texture_and_partial_neighbor(self):
         image, truth = scene()
-        report, _, _ = analyze_array(image, detection="outline")
+        report, _, _ = analyze_array(image, detection="outline", boundary_side="outer")
         self.assertEqual(report["status"], "contour_detected")
         self.assertIsNone(report["dimensions"])
         contour = report["contour"]
@@ -69,6 +69,23 @@ class ContourTests(unittest.TestCase):
         radii = np.linalg.norm(arc-[200, 350], axis=1)
         self.assertLess(np.percentile(abs(radii-100), 95), 3)
         self.assertGreater(contour["quality"]["supported_fraction"], .98)
+
+    def test_inner_boundary_matches_independent_floor_mask_and_is_inside_outer(self):
+        image, outer_truth = scene()
+        inner_truth = cv2.erode(outer_truth, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (19, 19)))
+        inner_report, _, _ = analyze_array(image, detection="outline")
+        outer_report, _, _ = analyze_array(image, detection="outline", boundary_side="outer")
+        self.assertEqual(inner_report["contour"]["boundary_side"], "inner")
+        self.assertEqual(outer_report["contour"]["boundary_side"], "outer")
+        predicted = np.zeros(inner_truth.shape, np.uint8)
+        cv2.fillPoly(predicted, [np.rint(inner_report["contour"]["points_px"]).astype(np.int32)], 255)
+        intersection = np.count_nonzero((predicted > 0) & (inner_truth > 0))
+        union = np.count_nonzero((predicted > 0) | (inner_truth > 0))
+        self.assertGreater(intersection/union, .99)
+        a = np.asarray(inner_report["contour"]["bbox_xywh_px"])
+        b = np.asarray(outer_report["contour"]["bbox_xywh_px"])
+        self.assertTrue(np.all(a[:2] > b[:2]+5))
+        self.assertTrue(np.all(a[2:] < b[2:]-10))
 
     def test_blank_and_clipped_openings_are_rejected(self):
         for image in (np.full((600, 900, 3), 140, np.uint8), scene(clipped=True)[0]):

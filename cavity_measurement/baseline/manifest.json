@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "scope": "Four development images; visually reviewed frozen outputs, not manual ground truth or metric standards",
   "default_images_directory": "../图片",
   "cases": [
@@ -44,5 +44,7 @@
       "reference_file": "contour_4.json"
     }
   ],
-  "review": "All four overlays visually reviewed; full main opening including four rounded corners, partial neighbors excluded"
+  "review": "All four new inner contours and a magnified top-edge crop visually checked against user-selected A; old outer references backed up",
+  "boundary_side": "inner",
+  "boundary_target": "A: dark rim to inward brighter cavity; wall-floor junction selected by user"
 }
