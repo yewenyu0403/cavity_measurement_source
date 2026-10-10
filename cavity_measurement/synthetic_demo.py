@@ -3,7 +3,7 @@ from pathlib import Path
 import json
 
 from cavity_measure import (Settings, cv2, np, measure_array, save_measurement,
-                            transform_points, write_image, write_json)
+                            transform_points, write_image, write_json, default_output_path)
 
 
 def affine_mapping(angle_deg=17, scale_px_per_mm=10, center=(500, 380)):
@@ -71,4 +71,4 @@ def run_demo(out):
 
 
 if __name__ == "__main__":
-    raise SystemExit(run_demo(Path("demo_output")))
+    raise SystemExit(run_demo(default_output_path("demo")))
