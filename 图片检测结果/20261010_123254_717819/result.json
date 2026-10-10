@@ -1,0 +1,5 @@
+{
+  "status": "failed",
+  "dimensions": null,
+  "error": "No isolated cavity found. Set --roi or --corners; check contrast/polarity"
+}
