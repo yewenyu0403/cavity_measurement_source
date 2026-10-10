@@ -36,9 +36,11 @@ def main(argv=None):
     parser.add_argument("--out", type=Path)
     args = parser.parse_args(argv)
     manifest = read_json(base/"baseline"/"manifest.json")
+    boundary_side = manifest["boundary_side"]
     out = args.out or default_output_path().parent/"四图基准验证"/datetime.now().strftime("%Y%m%d_%H%M%S_%f")
     out.mkdir(parents=True, exist_ok=True)
     summary = {"baseline_type": "frozen algorithm contours reviewed visually; not dimensional ground truth",
+               "boundary_side": boundary_side,
                "scope": "development regression on four supplied images; not an independent test set",
                "cases": [], "output": str(out.resolve())}
     previews = []
@@ -48,11 +50,13 @@ def main(argv=None):
         try:
             if file_sha256(path) != case["sha256"]:
                 raise ValueError("Source image hash differs from the registered baseline; keep original images")
-            report, overlay, rows = analyze_array(read_image(path), detection="outline")
+            report, overlay, rows = analyze_array(read_image(path), detection="outline", boundary_side=boundary_side)
             report["input_image"] = str(path.resolve())
             target = out/path.stem
             save_measurement(target, report, overlay, rows)
             expected = read_json(base/"baseline"/case["reference_file"])
+            if expected["boundary_side"] != boundary_side:
+                raise ValueError("Baseline boundary side differs from the selected target")
             iou = regression_iou(report["contour"]["points_px"], expected["points_px"], report["image_size"])
             delta = float(np.max(np.abs(np.asarray(report["contour"]["bbox_xywh_px"])-expected["bbox_xywh_px"])))
             entry.update({"status": report["status"], "sha256_verified": True,

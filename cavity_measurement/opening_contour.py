@@ -1,4 +1,4 @@
-"""Trace the exterior optical transition of a dark, rounded opening rim.
+"""Trace the selected inner or outer optical edge of a dark opening rim.
 
 Convexity is used ONLY to initialize the search strip. The returned contour is
 supported by original-resolution grayscale profiles, with a continuity prior.
@@ -16,6 +16,7 @@ class NoContourFound(ValueError):
 
 @dataclass
 class ContourSettings:
+    boundary_side: str = "inner"
     coarse_max_size: int = 1400
     blackhat_kernel: int = 25
     blackhat_threshold: float = 25.0
@@ -33,7 +34,11 @@ class ContourSettings:
     max_weak_arc_fraction: float = 0.03
 
     def validate(self):
+        if self.boundary_side not in ("inner", "outer"):
+            raise ValueError("boundary_side must be inner or outer")
         for name, value in asdict(self).items():
+            if name == "boundary_side":
+                continue
             if not np.isfinite(value) or value <= 0:
                 raise ValueError(f"Invalid contour setting: {name}")
         if not 200 <= self.coarse_max_size <= 3000:
@@ -186,7 +191,12 @@ def find_opening(gray, roi=None, settings=None):
                          borderMode=cv2.BORDER_REPLICATE).astype(np.float32)
     # Smooth along profile offsets only, never along unrelated profile rows.
     profiles = cv2.GaussianBlur(profiles, (0, 0), 0.75/step, sigmaY=0.01)
-    gradient = -np.gradient(profiles, step, axis=1)  # exterior -> dark rim
+    # The inward normal crosses two distinct transitions. Positive gradient
+    # selects the dark rim -> brighter cavity edge confirmed as target A;
+    # negative gradient retains the previous exterior -> dark rim option.
+    gradient = np.gradient(profiles, step, axis=1)
+    if settings.boundary_side == "outer":
+        gradient = -gradient
     gradient[~valid_locations] = -1000
     path = _continuous_path(gradient, step)
     center_offsets = offsets[path]
@@ -227,7 +237,10 @@ def find_opening(gray, roi=None, settings=None):
     lo, hi = points.min(axis=0), points.max(axis=0)
     return {
         "closed": True, "point_count": len(points),
-        "boundary_definition": "exterior-to-dark transition of the visible opening rim",
+        "boundary_side": settings.boundary_side,
+        "boundary_definition": ("dark rim to inward brighter cavity transition; target A, user-selected wall-floor boundary"
+                                if settings.boundary_side == "inner" else
+                                "exterior-to-dark transition of the visible opening rim"),
         "points_px": points.tolist(), "gradient_gray_per_px": strength.tolist(),
         "directly_supported": supported.tolist(),
         "bbox_xywh_px": [*lo.tolist(), *(hi-lo).tolist()],
