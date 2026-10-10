@@ -12,6 +12,7 @@ import json
 import math
 import sys
 from dataclasses import asdict, dataclass
+from datetime import datetime
 from pathlib import Path
 
 # A private dependency directory is optional; normal pip installations also work.
@@ -78,6 +79,22 @@ class Settings:
 def read_json(path):
     with open(path, encoding="utf-8-sig") as f:
         return json.load(f)
+
+
+def default_output_path(command="measure"):
+    """Resolve the shared output setting, independent of the shell directory."""
+    base = Path(__file__).resolve().parent
+    config_file = base / "output_config.json"
+    config = read_json(config_file) if config_file.is_file() else {}
+    root = Path(config.get("output_root", "图片检测结果")).expanduser()
+    if not root.is_absolute():
+        root = base / root
+    stamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+    if command == "demo":
+        return root / "合成示例" / stamp
+    if command == "calibrate":
+        return root / "标定" / stamp / "calibration.json"
+    return root / stamp
 
 
 def write_json(path, value):
@@ -574,7 +591,7 @@ def main(argv=None):
     sub = parser.add_subparsers(dest="command", required=True)
     m = sub.add_parser("measure", help="Measure one cavity opening")
     m.add_argument("--image", required=True, type=Path)
-    m.add_argument("--out", type=Path, default=Path("measurement_output"))
+    m.add_argument("--out", type=Path, help="Override output_config.json destination")
     c = m.add_mutually_exclusive_group()
     c.add_argument("--calibration", type=Path)
     c.add_argument("--mm-per-pixel", type=float)
@@ -587,11 +604,13 @@ def main(argv=None):
     c.add_argument("--image", required=True, type=Path)
     c.add_argument("--points", required=True, type=Path)
     c.add_argument("--intrinsics", type=Path, help="Optional calibrated camera_matrix and dist_coeffs JSON")
-    c.add_argument("--out", type=Path, default=Path("calibration.json"))
+    c.add_argument("--out", type=Path, help="Override output_config.json destination")
     d = sub.add_parser("demo", help="Generate a synthetic 60x40 mm cavity and measure it")
-    d.add_argument("--out", type=Path, default=Path("demo_output"))
+    d.add_argument("--out", type=Path, help="Override output_config.json destination")
     args = parser.parse_args(argv)
     try:
+        if args.out is None:
+            args.out = default_output_path(args.command)
         if args.command == "calibrate":
             result = build_planar_calibration(read_image(args.image), read_json(args.points),
                                               read_json(args.intrinsics) if args.intrinsics else None)
@@ -625,11 +644,12 @@ def main(argv=None):
     except (ValueError, OSError, KeyError, TypeError, cv2.error) as exc:
         error = {"status":"failed", "dimensions":None, "error":str(exc)}
         # The current result must never retain dimensions from an earlier run.
-        target = args.out.parent if args.command == "calibrate" else args.out
-        try:
-            write_json(Path(target)/("failure.json" if args.command == "calibrate" else "result.json"), error)
-        except OSError:
-            pass
+        if args.out is not None:
+            target = args.out.parent if args.command == "calibrate" else args.out
+            try:
+                write_json(Path(target)/("failure.json" if args.command == "calibrate" else "result.json"), error)
+            except OSError:
+                pass
         print(json.dumps(error, ensure_ascii=False), file=sys.stderr)
         return 2
 

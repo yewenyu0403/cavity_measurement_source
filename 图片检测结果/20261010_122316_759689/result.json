@@ -1,0 +1,292 @@
+{
+  "schema_version": 1,
+  "status": "measured",
+  "unit": "mm",
+  "dimensions": {
+    "unit": "mm",
+    "length": 59.99983030136819,
+    "width": 40.000408135185594,
+    "pair_02_spacing": 40.000408135185594,
+    "pair_13_spacing": 59.99983030136819,
+    "definition": "center-section spacings along opposite-normal bisectors; length >= width"
+  },
+  "quality_reasons": [],
+  "notes": [
+    "No depth, wall dimensions at depth, corner radius, or chamfer size is measured.",
+    "Residuals describe fit consistency, not measurement uncertainty or absolute accuracy.",
+    "A consistently wrong optical edge can pass these checks. Inspect overlay against the physical edge.",
+    "Scalar scale assumes a frontoparallel plane and stable magnification; it cannot correct tilt.",
+    "No lens-distortion correction was applied."
+  ],
+  "image_size": [
+    1000,
+    760
+  ],
+  "initialization": "automatic_threshold_region",
+  "coordinate_system": "original_full_image_px",
+  "seed_corners_px": [
+    [
+      271.49822998046875,
+      100.89117431640625
+    ],
+    [
+      845.3668823242188,
+      276.3414306640625
+    ],
+    [
+      728.3810424804688,
+      658.9827270507812
+    ],
+    [
+      154.51239013671875,
+      483.532470703125
+    ]
+  ],
+  "virtual_corners_px": [
+    [
+      271.58128137909836,
+      101.028190311206
+    ],
+    [
+      845.3684484407421,
+      276.44512429233635
+    ],
+    [
+      728.412398005491,
+      658.970773602758
+    ],
+    [
+      154.63392970804628,
+      483.55303538804685
+    ]
+  ],
+  "virtual_corners_measurement": [
+    [
+      27.158128137909834,
+      10.10281903112062
+    ],
+    [
+      84.53684484407421,
+      27.644512429233654
+    ],
+    [
+      72.84123980054912,
+      65.8970773602758
+    ],
+    [
+      15.463392970804636,
+      48.355303538804684
+    ]
+  ],
+  "section_spacings": [
+    {
+      "edge_pair": [
+        0,
+        2
+      ],
+      "fractions_along_opening": [
+        0.25,
+        0.5,
+        0.75
+      ],
+      "spacings": [
+        40.000490943243264,
+        40.000408135185594,
+        40.000325327127925
+      ],
+      "direction": [
+        -0.29236305372138993,
+        0.9563074007967856
+      ]
+    },
+    {
+      "edge_pair": [
+        1,
+        3
+      ],
+      "fractions_along_opening": [
+        0.25,
+        0.5,
+        0.75
+      ],
+      "spacings": [
+        59.9996282092136,
+        59.99983030136819,
+        60.00003239352278
+      ],
+      "direction": [
+        -0.956303360405427,
+        -0.2923762693470317
+      ]
+    }
+  ],
+  "opposite_parallel_angles_deg": [
+    0.0003163021077490841,
+    0.0011578669057666997
+  ],
+  "adjacent_orthogonal_errors_deg": [
+    0.0015288810334936898,
+    0.0012125795720976384,
+    5.4712634891984635e-05,
+    0.00037101409628803594
+  ],
+  "edges": [
+    {
+      "attempted_profiles": 168,
+      "accepted_profiles": 168,
+      "inlier_count": 168,
+      "inlier_fraction": 1.0,
+      "valid_profile_fraction": 1.0,
+      "coverage_of_sampled_straight_section": 0.9999999999999998,
+      "rms_px": 0.03128136392973591,
+      "p95_absolute_residual_px": 0.054468908065695314,
+      "median_gradient_gray_per_px": 45.00933837890625,
+      "rejected_profiles": {
+        "image_border": 0,
+        "low_contrast": 0,
+        "weak_gradient": 0,
+        "search_border": 0,
+        "multiple_edges": 0
+      },
+      "polarity": "dark",
+      "subpixel_method": "background-corrected local gradient centroid",
+      "edge_index": 0,
+      "line_px_abc": [
+        -0.29236041407185026,
+        0.9563082077885436,
+        -17.214471734472482
+      ],
+      "line_mm_abc": [
+        -0.29236041407185015,
+        0.9563082077885436,
+        -1.7214471734472667
+      ],
+      "rms_mm": 0.003128136392973638
+    },
+    {
+      "attempted_profiles": 112,
+      "accepted_profiles": 112,
+      "inlier_count": 112,
+      "inlier_fraction": 1.0,
+      "valid_profile_fraction": 1.0,
+      "coverage_of_sampled_straight_section": 1.0000000000000007,
+      "rms_px": 0.03175390447548717,
+      "p95_absolute_residual_px": 0.060260209007503805,
+      "median_gradient_gray_per_px": 44.842247009277344,
+      "rejected_profiles": {
+        "image_border": 0,
+        "low_contrast": 0,
+        "weak_gradient": 0,
+        "search_border": 0,
+        "multiple_edges": 0
+      },
+      "polarity": "dark",
+      "subpixel_method": "background-corrected local gradient centroid",
+      "edge_index": 1,
+      "line_px_abc": [
+        -0.956300406100481,
+        -0.29238593210353864,
+        889.2548558901085
+      ],
+      "line_mm_abc": [
+        -0.956300406100481,
+        -0.2923859321035386,
+        88.92548558901086
+      ],
+      "rms_mm": 0.0031753904475484793
+    },
+    {
+      "attempted_profiles": 168,
+      "accepted_profiles": 168,
+      "inlier_count": 168,
+      "inlier_fraction": 1.0,
+      "valid_profile_fraction": 1.0,
+      "coverage_of_sampled_straight_section": 1.0000000000000002,
+      "rms_px": 0.029140382694778273,
+      "p95_absolute_residual_px": 0.054751862090338936,
+      "median_gradient_gray_per_px": 44.91644287109375,
+      "rejected_profiles": {
+        "image_border": 0,
+        "low_contrast": 0,
+        "weak_gradient": 0,
+        "search_border": 0,
+        "multiple_edges": 0
+      },
+      "polarity": "dark",
+      "subpixel_method": "background-corrected local gradient centroid",
+      "edge_index": 2,
+      "line_px_abc": [
+        0.2923656933687022,
+        -0.9563065937977411,
+        417.2153001150815
+      ],
+      "line_mm_abc": [
+        0.29236569336870216,
+        -0.9563065937977411,
+        41.72153001150815
+      ],
+      "rms_mm": 0.0029140382694775864
+    },
+    {
+      "attempted_profiles": 112,
+      "accepted_profiles": 112,
+      "inlier_count": 112,
+      "inlier_fraction": 1.0,
+      "valid_profile_fraction": 1.0,
+      "coverage_of_sampled_straight_section": 1.0,
+      "rms_px": 0.02910821452106346,
+      "p95_absolute_residual_px": 0.0556269856791232,
+      "median_gradient_gray_per_px": 44.8453369140625,
+      "rejected_profiles": {
+        "image_border": 0,
+        "low_contrast": 0,
+        "weak_gradient": 0,
+        "search_border": 0,
+        "multiple_edges": 0
+      },
+      "polarity": "dark",
+      "subpixel_method": "background-corrected local gradient centroid",
+      "edge_index": 3,
+      "line_px_abc": [
+        0.9563063146127374,
+        0.2923666065606741,
+        -289.25216348170363
+      ],
+      "line_mm_abc": [
+        0.9563063146127375,
+        0.2923666065606741,
+        -28.925216348170373
+      ],
+      "rms_mm": 0.0029108214521066543
+    }
+  ],
+  "settings": {
+    "band_px": 12.0,
+    "corner_exclusion": 0.22,
+    "sample_spacing_px": 2.0,
+    "profile_step_px": 0.25,
+    "min_gradient": 5.0,
+    "min_contrast": 12.0,
+    "secondary_peak_ratio": 0.75,
+    "ransac_threshold_px": 0.7,
+    "ransac_iterations": 250,
+    "min_points": 15,
+    "min_valid_fraction": 0.55,
+    "min_inlier_fraction": 0.65,
+    "min_coverage": 0.6,
+    "max_rms_px": 0.45,
+    "max_parallel_angle_deg": 0.2,
+    "max_orthogonal_error_deg": 0.5,
+    "polarity": "dark",
+    "seed": 20261010
+  },
+  "calibration": {
+    "method": "user_scalar_scale",
+    "mm_per_pixel": 0.1
+  },
+  "software": {
+    "opencv": "4.14.0",
+    "numpy": "2.3.5"
+  },
+  "input_image": "C:\\Users\\chyew\\.codex\\visualizations\\2026\\10\\10\\01a12390-fabc-7f31-8693-2d41c77d2fb4\\cavity_measurement\\demo_output\\synthetic_input.png"
+}

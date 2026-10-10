@@ -7,13 +7,18 @@
 ## 最快开始
 
 在本机直接双击 `run_demo.cmd` 可生成并测量一个合成的 60 × 40 mm 圆角方腔。
-打开 `demo_output/overlay.png` 查看标注结果。
+示例运行后，会打开“图片检测结果/合成示例/时间戳/overlay.png”查看标注结果。
+
+当前统一输出位置：`C:\Users\chyew\Desktop\38所\cavity_measurement_source\图片检测结果`。
+测量结果保存到其下的时间戳子目录，合成示例保存到“合成示例/时间戳”，标定文件保存到“标定/时间戳”。
+路径在程序旁的 `output_config.json` 中设置；修改 `output_root` 即可同时改变所有启动方式的默认位置。
+命令行的 `--out` 仍可单独指定位置。复制到其他电脑后，请同步修改该配置。
 
 安装到其他电脑时，在本目录执行：
 
 ```powershell
 python -m pip install -r requirements.txt
-python cavity_measure.py demo --out demo_output
+python cavity_measure.py demo
 ```
 
 要求 Python 3.10 或以上。代码依赖 NumPy 和 OpenCV，不依赖深度学习模型、训练数据或 GPU。
@@ -23,7 +28,7 @@ python cavity_measure.py demo --out demo_output
 ## 用自己的图测量
 
 **便捷方式：把照片拖到 `measure_image.cmd` 上。**
-脚本询问已知的毫米/像素比例；直接回车则仅输出像素值。每次结果放在独立的 `outputs` 子目录。
+脚本询问已知的毫米/像素比例；直接回车则仅输出像素值。每次结果放在“图片检测结果”下独立的时间戳子目录。
 如需透视补偿、指定 ROI 或使用标定文件，请使用下面的命令行方式。
 
 ### 1. 已知同一测量平面的像素当量
@@ -32,7 +37,7 @@ python cavity_measure.py demo --out demo_output
 则 `mm_per_pixel = 20 / 1000 = 0.02`：
 
 ```powershell
-python cavity_measure.py measure --image "D:\图片\腔体.png" --mm-per-pixel 0.02 --out result_01
+python cavity_measure.py measure --image "D:\图片\腔体.png" --mm-per-pixel 0.02
 ```
 
 以上 `0.02` **仅为用法示例**。必须换成自己系统的实际标定值。
@@ -43,7 +48,7 @@ python cavity_measure.py measure --image "D:\图片\腔体.png" --mm-per-pixel 0
 暂时没有标定也可以运行：
 
 ```powershell
-python cavity_measure.py measure --image "D:\图片\腔体.png" --out pixel_result
+python cavity_measure.py measure --image "D:\图片\腔体.png"
 ```
 
 此时状态为 `pixel_only`，尺寸单位明确标为 `px`。
@@ -69,7 +74,7 @@ python cavity_measure.py measure --image "D:\图片\腔体.png" --out pixel_resu
 
 ```powershell
 python cavity_measure.py calibrate --image "reference.png" --points reference_points.json --out calibration.json
-python cavity_measure.py measure --image "cavity.png" --calibration calibration.json --out result_02
+python cavity_measure.py measure --image "cavity.png" --calibration calibration.json
 ```
 
 如果已有镜头内参和畸变系数，将其保存为 JSON，标定时增加 `--intrinsics intrinsics.json`。
@@ -94,7 +99,7 @@ python cavity_measure.py measure --image "cavity.png" --calibration calibration.
 指定包含一个腔体、四周留有余量的 ROI，数值分别为左上角 x、y、宽、高：
 
 ```powershell
-python cavity_measure.py measure --image cavity.png --roi 100 80 800 600 --mm-per-pixel 0.02 --out result_03
+python cavity_measure.py measure --image cavity.png --roi 100 80 800 600 --mm-per-pixel 0.02
 ```
 
 强透视、倒角或多重边缘可能使自动外接矩形偏离目标边，此时提供四个近似的**直边延长线交点**。
@@ -168,12 +173,12 @@ python cavity_measure.py measure --image cavity.png --roi 100 80 800 600 --mm-pe
 ## Python 接口
 
 ```python
-from cavity_measure import Settings, read_image, read_json, measure_array, save_measurement
+from cavity_measure import Settings, read_image, read_json, measure_array, save_measurement, default_output_path
 
 image = read_image("cavity.png")
 calibration = read_json("calibration.json")
 report, overlay, points = measure_array(image, Settings(), calibration)
-save_measurement("output", report, overlay, points)
+save_measurement(default_output_path(), report, overlay, points)
 if report["status"] == "measured":
     print(report["dimensions"]["length"], report["dimensions"]["width"])
 ```
