@@ -11,7 +11,7 @@ if (-not (Test-Path -LiteralPath $ImagePath -PathType Leaf)) {
 $taskPython = Join-Path $env:USERPROFILE '.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe'
 if (-not (Test-Path -LiteralPath $taskPython)) { $taskPython = 'python' }
 if (-not $PSBoundParameters.ContainsKey('MmPerPixel')) {
-    $MmPerPixel = Read-Host 'Known mm/pixel scale (example 0.02; Enter = pixels only)'
+    $MmPerPixel = Read-Host 'Known calibrated mm/pixel (Enter = skip; do not enter an example value)'
 }
 $taskArgs = @('-X','utf8', (Join-Path $PSScriptRoot 'cavity_measure.py'), 'measure',
               '--image', $ImagePath)
