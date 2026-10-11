@@ -1,0 +1,140 @@
+{
+  "source": "F:\\文件\\研究生文件\\38所\\cavity_measurement_source\\cavity_measurement",
+  "scope": "Inspection only; program and measurement thresholds unchanged",
+  "cases": [
+    {
+      "image": "矩形腔体1.bmp",
+      "default": {
+        "status": "contour_detected",
+        "dimensions": null,
+        "measurement_status": "not_performed",
+        "boundary_side": "inner"
+      },
+      "strict_default": {
+        "status": "failed",
+        "dimensions": null,
+        "error": "No isolated cavity found. Set --roi or --corners; check contrast/polarity"
+      },
+      "strict_assisted_seed_trial": {
+        "status": "failed",
+        "dimensions": null,
+        "error": "Edge 0: Too few trustworthy edge profiles: 181/1000; rejected={'image_border': 0, 'low_contrast': 0, 'weak_gradient': 0, 'search_border': 2, 'multiple_edges': 817}"
+      },
+      "assisted_trial_note": "Diagnostic only: approximate corners inferred from the selected A contour, positive edge polarity; not connected to the current default launcher",
+      "scalar_input_test": {
+        "scale_is_test_value_not_validated_calibration": true,
+        "status": "contour_detected",
+        "dimensions": null,
+        "measurement_status": "not_performed",
+        "mapped_mm_coordinates_present": true
+      }
+    },
+    {
+      "image": "矩形腔体2.bmp",
+      "default": {
+        "status": "contour_detected",
+        "dimensions": null,
+        "measurement_status": "not_performed",
+        "boundary_side": "inner"
+      },
+      "strict_default": {
+        "status": "failed",
+        "dimensions": null,
+        "error": "No isolated cavity found. Set --roi or --corners; check contrast/polarity"
+      },
+      "strict_assisted_seed_trial": {
+        "status": "failed",
+        "dimensions": null,
+        "error": "Edge 0: Too few trustworthy edge profiles: 129/1000; rejected={'image_border': 0, 'low_contrast': 0, 'weak_gradient': 0, 'search_border': 0, 'multiple_edges': 871}"
+      },
+      "assisted_trial_note": "Diagnostic only: approximate corners inferred from the selected A contour, positive edge polarity; not connected to the current default launcher"
+    },
+    {
+      "image": "矩形腔体3.bmp",
+      "default": {
+        "status": "contour_detected",
+        "dimensions": null,
+        "measurement_status": "not_performed",
+        "boundary_side": "inner"
+      },
+      "strict_default": {
+        "status": "failed",
+        "dimensions": null,
+        "error": "No isolated cavity found. Set --roi or --corners; check contrast/polarity"
+      },
+      "strict_assisted_seed_trial": {
+        "status": "failed",
+        "dimensions": null,
+        "error": "Edge 0: Too few trustworthy edge profiles: 72/1000; rejected={'image_border': 0, 'low_contrast': 0, 'weak_gradient': 0, 'search_border': 0, 'multiple_edges': 928}"
+      },
+      "assisted_trial_note": "Diagnostic only: approximate corners inferred from the selected A contour, positive edge polarity; not connected to the current default launcher"
+    },
+    {
+      "image": "矩形腔体4.bmp",
+      "default": {
+        "status": "contour_detected",
+        "dimensions": null,
+        "measurement_status": "not_performed",
+        "boundary_side": "inner"
+      },
+      "strict_default": {
+        "status": "failed",
+        "dimensions": null,
+        "error": "No isolated cavity found. Set --roi or --corners; check contrast/polarity"
+      },
+      "strict_assisted_seed_trial": {
+        "status": "failed",
+        "dimensions": null,
+        "error": "Edge 0: Too few trustworthy edge profiles: 46/1000; rejected={'image_border': 0, 'low_contrast': 0, 'weak_gradient': 0, 'search_border': 0, 'multiple_edges': 954}"
+      },
+      "assisted_trial_note": "Diagnostic only: approximate corners inferred from the selected A contour, positive edge polarity; not connected to the current default launcher"
+    }
+  ],
+  "source_hashes": {
+    "cavity_measure.py": "dab4b49c3d665f3c5f96fd263a56480e274d74f758cab56d20483ddea70192b1",
+    "opening_contour.py": "594667eb99c943f49a0043cc557e9edd2567ad9e1cafeb1251308a05c98b3d4a",
+    "measure_image.ps1": "09876ad4569b9a9ac6e93e3430385b2b30286ccb66a97627bcd1abc2b7ef5ad6"
+  },
+  "synthetic_known_geometry": {
+    "status": "measured",
+    "dimensions": {
+      "unit": "mm",
+      "length": 59.99985215401529,
+      "width": 40.00054339110055,
+      "pair_02_spacing": 40.00054339110055,
+      "pair_13_spacing": 59.99985215401529,
+      "definition": "center-section spacings along opposite-normal bisectors; length >= width"
+    },
+    "quality_reasons": [],
+    "measurement_status": null,
+    "edge_metrics": [
+      {
+        "edge": 0,
+        "rms_px": 0.03663674783801488,
+        "valid_fraction": 1.0,
+        "inlier_fraction": 1.0
+      },
+      {
+        "edge": 1,
+        "rms_px": 0.035654154960139614,
+        "valid_fraction": 1.0,
+        "inlier_fraction": 1.0
+      },
+      {
+        "edge": 2,
+        "rms_px": 0.03266480631768812,
+        "valid_fraction": 1.0,
+        "inlier_fraction": 1.0
+      },
+      {
+        "edge": 3,
+        "rms_px": 0.03250418247443067,
+        "valid_fraction": 1.0,
+        "inlier_fraction": 1.0
+      }
+    ]
+  },
+  "calibration_named_files_found": [
+    "F:\\文件\\研究生文件\\38所\\cavity_measurement_source\\cavity_measurement\\demo_output\\calibration_SYNTHETIC_ONLY.json"
+  ]
+}

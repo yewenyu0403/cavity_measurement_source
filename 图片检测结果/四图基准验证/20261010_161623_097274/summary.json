@@ -1,0 +1,54 @@
+{
+  "baseline_type": "frozen algorithm contours reviewed visually; not dimensional ground truth",
+  "boundary_side": "inner",
+  "scope": "development regression on four supplied images; not an independent test set",
+  "cases": [
+    {
+      "image": "矩形腔体1.bmp",
+      "status": "contour_detected",
+      "regression_pass": true,
+      "sha256_verified": true,
+      "regression_mask_iou": 1.0,
+      "maximum_bbox_change_px": 0.0,
+      "supported_fraction": 0.9951323395193186,
+      "point_count": 3287,
+      "result_folder": "F:\\文件\\研究生文件\\38所\\cavity_measurement_source\\图片检测结果\\四图基准验证\\20261010_161623_097274\\矩形腔体1"
+    },
+    {
+      "image": "矩形腔体2.bmp",
+      "status": "contour_detected",
+      "regression_pass": true,
+      "sha256_verified": true,
+      "regression_mask_iou": 1.0,
+      "maximum_bbox_change_px": 0.0,
+      "supported_fraction": 0.9987834549878345,
+      "point_count": 3288,
+      "result_folder": "F:\\文件\\研究生文件\\38所\\cavity_measurement_source\\图片检测结果\\四图基准验证\\20261010_161623_097274\\矩形腔体2"
+    },
+    {
+      "image": "矩形腔体3.bmp",
+      "status": "contour_detected",
+      "regression_pass": true,
+      "sha256_verified": true,
+      "regression_mask_iou": 1.0,
+      "maximum_bbox_change_px": 0.0,
+      "supported_fraction": 0.998478856099787,
+      "point_count": 3287,
+      "result_folder": "F:\\文件\\研究生文件\\38所\\cavity_measurement_source\\图片检测结果\\四图基准验证\\20261010_161623_097274\\矩形腔体3"
+    },
+    {
+      "image": "矩形腔体4.bmp",
+      "status": "contour_detected",
+      "regression_pass": true,
+      "sha256_verified": true,
+      "regression_mask_iou": 1.0,
+      "maximum_bbox_change_px": 0.0,
+      "supported_fraction": 1.0,
+      "point_count": 3288,
+      "result_folder": "F:\\文件\\研究生文件\\38所\\cavity_measurement_source\\图片检测结果\\四图基准验证\\20261010_161623_097274\\矩形腔体4"
+    }
+  ],
+  "output": "F:\\文件\\研究生文件\\38所\\cavity_measurement_source\\图片检测结果\\四图基准验证\\20261010_161623_097274",
+  "passed": 4,
+  "total": 4
+}
