@@ -2,25 +2,24 @@
 
 默认优先识别**外围黑色边界带靠腔内的一沿（含圆角）**，即用户在局部图中确认的 A 边、所需的底面与侧壁交界。
 图像操作定义是沿指向腔内的法向，从深色边界带进入较亮腔内的灰度过渡；单幅图不独立证明交界深度或实体截面。
-保留原有“标定 → 定位 → 亚像素边缘 → 四边独立拟合 → 对边间距”的尺寸检测流程。
-完整轮廓已在用户提供的四张实拍图上进行回归验证；尺寸算法另有合成测试。
+默认完成“内轮廓 → 去除圆角段 → 四边独立拟合 → 中央对边间距”的像素尺寸计算；有独立标定时可换算毫米。原有灰度区域定位尺寸流程通过 `--detection strict` 保留。
+完整轮廓已在用户提供的四张实拍图上进行回归验证；尺寸计算另有独立已知几何、旋转、透视和拒测测试。
 四张实拍图用于本轮开发调参，不能作为独立测试集，也没有提供可追溯的尺寸真值。
 
 ## 四张实拍图与以后复查
 
-把图片拖到原来的 `measure_image.cmd` 上即可。未标定时，比例输入直接回车。
-程序通过暗边带定位、凸轮廓初始化、原图灰度法向剖面连续跟踪，输出内部边框的闭合轮廓。
+把图片或图片文件夹拖到统一入口 `measure_image.cmd` 上即可自动选择单图或批量测量。双击后可输入路径，或在路径处直接回车处理默认 `图片` 目录。未标定时，比例输入直接回车。
+程序通过暗边带定位、凸轮廓初始化、原图灰度法向剖面连续跟踪，输出内部边框闭合轮廓，再从四条直边的受支持点独立拟合并计算长宽。
 定位时使用的凸性只约束搜索初值；最终轮廓不强制为矩形或圆弧。
 绿色表示达到灰度支持门限的边界，黄色表示证据较弱且受连续性约束的段落。
 默认 `--boundary-side inner` 跟踪黑边的**内侧暗到亮过渡**，绿色线位于黑边靠腔内的一沿。
 可用 `--boundary-side outer` 对照之前的外侧轮廓；程序依据灰度边缘定位，不采用固定内缩像素数。
 
-新状态 `contour_detected` 表示选定的完整轮廓识别成功，退出码为 0。
-此时 `dimensions: null` 和 `measurement_status: not_performed` 是预期结果，表示本轮未执行尺寸计量。
-尺寸不能由轮廓识别成功或四张图回归通过直接推断。
+默认状态 `pixel_only` 表示像素尺寸检查通过，`dimensions` 给出长度和宽度，单位 `px`；提供独立标定后可返回 `measured` 和毫米尺寸。`review_required` 表示尺寸检查未通过，长度、宽度不输出。只有显式 `--detection outline` 才返回 `contour_detected`、`dimensions: null`，表示仅识别轮廓。
+尺寸定义和算法门限见 `docs/MEASUREMENT.md`。四张图回归通过不代表实物尺寸精度已经验证。
 
 ```powershell
-# 只识别已确认的 A 内边框（默认），失败时不自动改测其他内部区域
+# 只识别已确认的 A 内边框；默认不加 outline 时还会计算像素长宽
 python cavity_measure.py measure --image "..\图片\矩形腔体1.bmp" --detection outline
 
 # 对照原来的外侧黑边轮廓
@@ -63,7 +62,7 @@ python cavity_measure.py demo
 
 ## 用自己的图测量
 
-**便捷方式：把照片拖到 `measure_image.cmd` 上。**
+**便捷方式：把照片或图片文件夹拖到 `measure_image.cmd` 上。**
 脚本询问已知的毫米/像素比例；未标定直接回车。每次结果放在“图片检测结果”下独立的时间戳子目录。
 如需透视补偿、指定 ROI 或使用标定文件，请使用下面的命令行方式。
 
@@ -77,7 +76,7 @@ python cavity_measure.py measure --image "D:\图片\腔体.png" --mm-per-pixel 0
 ```
 
 以上 `0.02` **仅为用法示例**。必须换成自己系统的实际标定值。
-标尺应与要测的腔口共面，测量时保持镜头、焦距、相机位置和工件高度不变。
+标尺应与要测的 A 内边框所在底面共面，测量时保持镜头、焦距、相机位置和工件高度不变。
 标量比例不能补偿空间倾斜，也不自动消除镜头畸变。
 不能用被测腔体的设计值 60 × 40 mm 反算比例后，再用该比例“验证”尺寸。
 
@@ -87,9 +86,7 @@ python cavity_measure.py measure --image "D:\图片\腔体.png" --mm-per-pixel 0
 python cavity_measure.py measure --image "D:\图片\腔体.png"
 ```
 
-默认 `--detection auto` 优先识别完整暗边轮廓，成功时为 `contour_detected`；
-找不到这种完整暗边时才进入原有灰度区域/直线测量流程，未标定且检查通过时为 `pixel_only`。
-有多个完整候选或完整轮廓证据不足时会拒绝，不会悄悄换测腔内纹理。
+默认 `--detection auto` 与 `--detection contour` 都识别选定的完整暗边轮廓，并计算尺寸；没有标定且检查通过时为 `pixel_only`。找不到完整暗边、存在多个候选或尺寸证据不足时会拒测，不再自动换测其他区域。旧灰度区域测量请明确使用 `--detection strict`。
 
 ### 2. 有平面倾斜：用独立参考点进行平面标定
 
@@ -131,8 +128,7 @@ python cavity_measure.py measure --image "cavity.png" --calibration calibration.
 
 ### 3. 自动定位不稳定或图中有多个腔体
 
-自动定位选择 ROI 内主要的孤立亮/暗区域，再用最小外接旋转矩形给出初始边。
-默认腔内比外部暗；亮腔使用 `--polarity bright`，也可以尝试 `--polarity auto`。
+默认内轮廓模式在 ROI 内寻找完整暗边带，再跟踪 A 内边框；ROI 应包含完整边界并留有余量。以下人工种子与极性参数仅适用于旧 `--detection strict` 流程：它通过孤立亮/暗区域定位，默认腔内比外部暗，亮腔使用 `--polarity bright`。
 
 指定包含一个腔体、四周留有余量的 ROI，数值分别为左上角 x、y、宽、高：
 
@@ -142,7 +138,7 @@ python cavity_measure.py measure --image cavity.png --roi 100 80 800 600 --mm-pe
 
 强透视、倒角或多重边缘可能使自动外接矩形偏离目标边，此时提供四个近似的**直边延长线交点**。
 圆角方腔的种子点是虚拟尖角，不是圆弧上任意四个点。
-创建 `corners.json`，然后使用 `--corners corners.json`：
+创建 `corners.json`，然后使用 `--detection strict --corners corners.json`：
 
 ```json
 {
@@ -155,7 +151,9 @@ python cavity_measure.py measure --image cavity.png --roi 100 80 800 600 --mm-pe
 最终边缘应位于种子线附近，默认搜索带为线两侧各 12 px；完整灰度剖面还需留约 4 px 余量。
 搜索带过大会增加把倒角、反光或底面边界误认为腔口的风险。
 
-## 实际算法
+## 算法流程
+
+默认内轮廓尺寸流程见 `docs/MEASUREMENT.md`。以下保留旧 `--detection strict` 流程的说明和参数：
 
 1. 可选：依据相机内参对原图去畸变。
 2. 对 ROI 做 Otsu 阈值分割，使用外接旋转矩形获得四边初值；也可人工指定四角。
@@ -173,7 +171,7 @@ python cavity_measure.py measure --image cavity.png --roi 100 80 800 600 --mm-pe
 因此工具会将状态设为 `review_required`，不输出单一矩形长宽，同时保留 25%、50%、75% 位置的截面间距供分析。
 这些截面间距沿两侧法向的角平分线方向计算，是明确约定的几何量，不自动等同于图纸尺寸定义。
 
-参数保存在 `config/settings.example.json`，可复制修改后通过 `--config my_settings.json` 使用。
+旧 `--detection strict` 的参数保存在 `config/settings.example.json`，可复制修改后通过 `--config my_settings.json` 使用。默认内轮廓尺寸参数见 `config/contour_measurement.example.json`，通过 `--measurement-config my_measurement.json` 使用。
 
 | 参数 | 默认值 | 调整依据 |
 |---|---:|---|
@@ -190,7 +188,7 @@ python cavity_measure.py measure --image cavity.png --roi 100 80 800 600 --mm-pe
 
 ## 输出与状态
 
-完整轮廓识别成功时会输出：
+默认尺寸模式成功时，以下轮廓文件与尺寸文件一起输出；仅轮廓模式只输出轮廓及空尺寸说明：
 
 - `overlay.png`：原始分辨率的完整轮廓叠加图。
 - `overlay_preview.jpg`：便于打开的小尺寸预览。
@@ -198,7 +196,9 @@ python cavity_measure.py measure --image cavity.png --roi 100 80 800 600 --mm-pe
 - `contour_points.csv`：顺序排列的轮廓坐标、灰度梯度、支持标志及可选毫米坐标；最后一个点与第一个点闭合。
 - `result.json`：完整轮廓、状态、灰度支持指标、识别方法与标定信息。
 
-原有直线尺寸计量成功时会输出：
+默认尺寸模式另有 `尺寸结果.txt`、`dimensions.csv`、带长宽箭头的标注图，以及 `edge_points.csv`。JSON 中保留独立四边方程、拟合残差与多截面间距。
+
+旧 `strict` 直线流程另有以下诊断：
 
 - `overlay.png`：四边、边缘点、RANSAC 离群点（红色）、拟合残差及测量状态。
 - `result.json`：尺寸、单位、标定信息、四边方程、截面间距和质量检查结果。
@@ -214,7 +214,7 @@ python cavity_measure.py measure --image cavity.png --roi 100 80 800 600 --mm-pe
 
 `measured` 表示软件检查通过；它不证明绝对精度、不确定度或工件尺寸合格。
 失败也会覆盖当前 `result.json`，防止后续程序误读上一次的尺寸。
-失败时不会生成新标注图或 CSV；如果复用输出目录，其旧图和 CSV 不属于当前结果。
+失败时也会覆盖 `尺寸结果.txt` 和 `dimensions.csv`，尺寸列留空。如果复用目录，旧标注图和点坐标 CSV 不属于当前结果，应以最新状态为准。
 建议每张图使用单独的输出目录，自动集成时优先检查退出码和 `result.json`。
 
 ## Python 接口
@@ -226,13 +226,13 @@ image = read_image("cavity.png")
 calibration = read_json("calibration.json")
 report, overlay, points = analyze_array(image, Settings(), calibration)
 save_measurement(default_output_path(), report, overlay, points)
-if report["status"] == "measured":
+if report["dimensions"] is not None:
     print(report["dimensions"]["length"], report["dimensions"]["width"])
 ```
 
 ## 适用边界和现场验证
 
-- 测量对象是清楚可见的同一平面腔口。腔深、不同深度处的壁间距、底面形状、圆角半径和倒角尺寸不在本版范围内。
+- 测量对象是清楚可见的 A 内边框（用户指定的底面与侧壁交界光学边缘），应属于同一测量平面。腔深、不同深度处的壁间距、底面形状、圆角半径和倒角尺寸不在本版范围内。
 - 先明确测量的是倒角外边、倒角内边还是指定实体截面。灰度边缘不一定就是图纸规定的尺寸边界。
 - 自动定位适用于一个主要、相对孤立、近似矩形的腔口。纹理、反光区域也可能形成类似候选区，需要检查标注图。
 - 当直边不足、圆角占比过大、目标太小、严重失焦或反光掩盖实体边界时，应拒测或重新拍摄。

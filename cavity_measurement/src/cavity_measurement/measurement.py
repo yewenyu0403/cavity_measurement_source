@@ -1,8 +1,9 @@
 """Complete cavity-opening contour detection and planar line metrology.
 
 Run ``python cavity_measure.py --help``. All image coordinates use x,y order.
-The four independent fitted lines describe the virtual sharp-corner opening,
-not the corner arcs, chamfer depth, cavity bottom, or wall dimensions at depth.
+The four independent fitted lines describe the selected optical boundary at
+its measurement plane. Corner radius, cavity depth and wall thickness are not
+measured. Default inner mode uses the user-confirmed wall-floor optical edge.
 """
 from __future__ import annotations
 
@@ -591,30 +592,63 @@ def contour_array(image, calibration=None, roi=None, boundary_side="inner"):
     return report, overlay, []
 
 
-def analyze_array(image, settings=None, calibration=None, corners=None, roi=None, detection="auto", boundary_side="inner"):
-    """Prefer a complete dark rim in auto mode; keep strict line metrology available."""
-    from .contour import NoContourFound
-    if detection not in ("auto", "outline", "strict"):
-        raise MeasurementError("detection must be auto, outline, or strict")
+def analyze_array(image, settings=None, calibration=None, corners=None, roi=None, detection="auto", boundary_side="inner", measurement_settings=None):
+    """Measure the selected dark-rim boundary; keep contour-only and legacy modes."""
+    if detection not in ("auto", "outline", "contour", "strict"):
+        raise MeasurementError("detection must be auto, outline, contour, or strict")
     if boundary_side not in ("inner", "outer"):
         raise MeasurementError("boundary_side must be inner or outer")
     if settings is not None:
         settings.validate()
-    if corners is not None and detection == "outline":
-        raise MeasurementError("--corners initializes line metrology; use --roi for complete-outline detection")
+    if corners is not None and detection != "strict":
+        raise MeasurementError("--corners requires --detection strict; use --roi for selected-contour measurement")
     if detection != "strict" and corners is None:
-        try:
-            return contour_array(image, calibration, roi, boundary_side)
-        except NoContourFound:
-            if detection == "outline":
-                raise
+        report, overlay, rows = contour_array(image, calibration, roi, boundary_side)
+        if detection == "outline":
+            return report, overlay, rows
+        from .metrology import attach_contour_dimensions
+        return attach_contour_dimensions(report, overlay, measurement_settings)
     return measure_array(image, settings, calibration, corners, roi)
+
+
+def save_result_summary(out, report):
+    """Write human-readable sizes and a one-row CSV, also clearing failed sizes."""
+    out = Path(out)
+    out.mkdir(parents=True, exist_ok=True)
+    dims = report.get("dimensions") or {}
+    label = {"pixel_only": "像素尺寸测量完成（未标定）", "measured": "已按输入标定换算尺寸",
+             "contour_detected": "仅识别轮廓，未执行尺寸测量", "review_required": "尺寸检查未通过，需要复核",
+             "failed": "检测失败"}.get(report["status"], report["status"])
+    lines = [label, f"状态：{report['status']}"]
+    if report.get("input_image"):
+        lines.append(f"图片：{report['input_image']}")
+    if "contour" in report:
+        side = report["contour"]["boundary_side"]
+        lines.append("边界：A 内边框（外围黑边靠腔内的一沿）" if side == "inner" else "边界：黑边外侧轮廓")
+    if dims:
+        lines += [f"长度：{dims['length']:.2f} {dims['unit']}", f"宽度：{dims['width']:.2f} {dims['unit']}",
+                  "定义：四条直边独立拟合后的中央截面对边间距；圆角不参与拟合，长度取较大值。"]
+    else:
+        lines.append("没有可接受的长度、宽度结果。")
+    lines += [f"检查信息：{reason}" for reason in report.get("quality_reasons", [])]
+    if report.get("error"):
+        lines.append(f"错误：{report['error']}")
+    if not dims or dims.get("unit") == "px":
+        lines.append("未得到毫米尺寸；需要底面所在测量平面的独立标定。")
+    lines.append("拟合残差不是测量不确定度；此结果不证明实际尺寸精度或工件合格。")
+    (out/"尺寸结果.txt").write_text("\n".join(lines)+"\n", encoding="utf-8-sig")
+    with (out/"dimensions.csv").open("w", encoding="utf-8-sig", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["image", "status", "unit", "length", "width", "pair_02_spacing", "pair_13_spacing"])
+        writer.writerow([report.get("input_image", ""), report["status"], dims.get("unit", ""),
+                         *[dims.get(key, "") for key in ("length", "width", "pair_02_spacing", "pair_13_spacing")]])
 
 
 def save_measurement(out, report, overlay, rows):
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
     write_json(out / "result.json", report)
+    save_result_summary(out, report)
     write_image(out / "overlay.png", overlay)
     if "contour" in report:
         contour = report["contour"]
@@ -632,7 +666,8 @@ def save_measurement(out, report, overlay, rows):
     if "edges" in report:
         with open(out / "edge_points.csv", "w", encoding="utf-8-sig", newline="") as f:
             writer = csv.writer(f)
-            writer.writerow(["edge", "x_px", "y_px", "ransac_inlier", "x_mm", "y_mm"])
+            inlier_name = "fit_inlier" if report.get("measurement_method") else "ransac_inlier"
+            writer.writerow(["edge", "x_px", "y_px", inlier_name, "x_mm", "y_mm"])
             writer.writerows(rows)
     scale = min(1., 1600/max(overlay.shape[:2]))
     preview = cv2.resize(overlay, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
@@ -652,7 +687,7 @@ def build_planar_calibration(image, point_spec, intrinsics=None):
         if cv2.contourArea(hull) <= 1e-6:
             raise MeasurementError("Reference points must not be collinear")
     calibration = {"schema_version": 1, "method": "planar_homography",
-                   "image_size": [width,height], "plane": "cavity opening plane"}
+                    "image_size": [width,height], "plane": "selected optical boundary measurement plane"}
     if intrinsics:
         for key in ("camera_matrix", "dist_coeffs"):
             calibration[key] = intrinsics[key]
@@ -670,7 +705,7 @@ def build_planar_calibration(image, point_spec, intrinsics=None):
     calibration["reference_fit_max_mm"] = float(residuals.max())
     calibration["notes"] = [
         "Coordinates must come from an independent reference, not the nominal cavity being inspected.",
-        "Keep reference and cavity opening coplanar; keep image size, lens, focus, and camera pose unchanged.",
+        "Keep reference and selected boundary measurement plane coplanar; keep image size, lens, focus, and camera pose unchanged.",
         "Four points can fit exactly; zero fitting residual does not establish accuracy.",
         "Verify using independent known lengths across the field of view before production use.",
     ]
@@ -691,8 +726,9 @@ def main(argv=None):
     m.add_argument("--config", type=Path, help="JSON object of Settings overrides")
     m.add_argument("--polarity", choices=["dark","bright","auto"])
     m.add_argument("--band-px", type=float)
-    m.add_argument("--detection", choices=["auto", "outline", "strict"], default="auto",
-                   help="auto: prefer complete dark rim; outline: contour only; strict: original line metrology")
+    m.add_argument("--detection", choices=["auto", "outline", "contour", "strict"], default="auto",
+                   help="auto/contour: selected dark-rim contour and dimensions; outline: contour only; strict: legacy line metrology")
+    m.add_argument("--measurement-config", type=Path, help="JSON overrides for ContourMeasurementSettings")
     m.add_argument("--boundary-side", choices=["inner", "outer"], default="inner",
                    help="inner (default): target A, dark rim to cavity; outer: previous exterior edge")
     c = sub.add_parser("calibrate", help="Fit planar pixel-to-mm mapping from independent reference points")
@@ -728,16 +764,32 @@ def main(argv=None):
         if args.mm_per_pixel is not None:
             calibration = {"method":"user_scalar_scale", "mm_per_pixel":args.mm_per_pixel}
         corners = read_json(args.corners)["corners_px"] if args.corners else None
+        if args.detection != "strict" and (args.config or args.polarity or args.band_px is not None):
+            raise MeasurementError("--config, --polarity and --band-px apply to --detection strict; use --measurement-config for contour dimensions")
+        measurement_settings = None
+        if args.measurement_config:
+            if args.detection in ("outline", "strict"):
+                raise MeasurementError("--measurement-config applies to --detection auto or contour")
+            from .metrology import ContourMeasurementSettings
+            measurement_settings = ContourMeasurementSettings(**read_json(args.measurement_config))
+            measurement_settings.validate()
         report, overlay, rows = analyze_array(read_image(args.image), Settings(**config),
-                                              calibration, corners, args.roi, args.detection, args.boundary_side)
+                                              calibration, corners, args.roi, args.detection, args.boundary_side,
+                                              measurement_settings)
         report["input_image"] = str(args.image.resolve())
         save_measurement(args.out, report, overlay, rows)
         summary = {"status": report["status"], "dimensions": report["dimensions"],
                    "quality_reasons": report["quality_reasons"], "output": str(args.out.resolve())}
         if "contour" in report:
-            message = ("腔体内部边框识别成功（已确认的 A 边，含圆角）；本次未执行尺寸计量。"
-                       if args.boundary_side == "inner" else
-                       "腔体外围黑边外侧轮廓识别成功（含圆角）；本次未执行尺寸计量。")
+            boundary = "A 内边框" if args.boundary_side == "inner" else "黑边外侧轮廓"
+            if report["status"] == "contour_detected":
+                message = f"{boundary}识别成功（含圆角）；本次仅识别轮廓。"
+            elif report["status"] == "review_required":
+                message = f"{boundary}已识别，但尺寸检查未通过；请查看检查信息。"
+            elif report["unit"] == "px":
+                message = f"{boundary}像素尺寸测量完成；未标定，不输出毫米尺寸。"
+            else:
+                message = f"{boundary}尺寸计算完成，已按输入标定换算为毫米。"
             summary.update({"message": message, "boundary_side": args.boundary_side,
                             "contour_point_count": report["contour"]["point_count"],
                             "supported_fraction": report["contour"]["quality"]["supported_fraction"]})
@@ -750,6 +802,8 @@ def main(argv=None):
             target = args.out.parent if args.command == "calibrate" else args.out
             try:
                 write_json(Path(target)/("failure.json" if args.command == "calibrate" else "result.json"), error)
+                if args.command == "measure":
+                    save_result_summary(target, error)
             except OSError:
                 pass
         print(json.dumps(error, ensure_ascii=False), file=sys.stderr)
