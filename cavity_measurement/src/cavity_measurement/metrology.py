@@ -7,7 +7,7 @@ from dataclasses import asdict, dataclass
 import math
 
 from .measurement import (MeasurementError, Settings, check_calibration, cv2,
-                          fit_tls, geometry, np, order_corners, points_array,
+                          fit_tls, format_dimension, geometry, np, order_corners, points_array,
                           robust_line, transform_points)
 
 
@@ -219,7 +219,7 @@ def attach_contour_dimensions(report, overlay, settings=None):
     label = f"{report['contour']['boundary_side'].upper()}  {status}"
     dims = report["dimensions"]
     if dims:
-        label += f"  L={dims['length']:.2f}  W={dims['width']:.2f} {unit}"
+        label += f"  L={format_dimension(dims['length'])}  W={format_dimension(dims['width'])} {unit}"
     color = (0, 220, 255) if reasons else (80, 240, 80)
     for text, y in [(label, 34), ("NO METRIC CALIBRATION - IMAGE PIXELS ONLY" if matrix is None else "CALIBRATED PLANE - VERIFY ACCURACY INDEPENDENTLY", 69)]:
         cv2.putText(overlay, text, (int(12*factor), int(y*factor)), cv2.FONT_HERSHEY_SIMPLEX,
@@ -257,7 +257,7 @@ def _draw_measurement(overlay, report, pixel_lines, world_lines, virtual, matrix
                            max(2, int(2*factor)), cv2.LINE_AA, tipLength=.025)
         value = section["spacings"][1]
         is_length = abs(value-report["dimensions"]["length"]) < 1e-8
-        label = f"{'L' if is_length else 'W'} = {value:.2f} {report['dimensions']['unit']}"
+        label = f"{'L' if is_length else 'W'} = {format_dimension(value)} {report['dimensions']['unit']}"
         midpoint = (ends[0]+ends[1])/2
         horizontal = abs(ends[1, 0]-ends[0, 0]) > abs(ends[1, 1]-ends[0, 1])
         offset = np.array([20, 40] if horizontal else [20, -25])*factor

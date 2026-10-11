@@ -8,7 +8,7 @@ import sys
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
-from cavity_measure import (analyze_array, cv2, default_output_path, np, read_image,
+from cavity_measure import (analyze_array, cv2, default_output_path, format_dimension, np, read_image,
                             read_json, save_measurement, save_result_summary, write_image, write_json)
 from cavity_measurement.metrology import ContourMeasurementSettings
 
@@ -77,7 +77,7 @@ def main(argv=None):
         for case in cases:
             dims = case["dimensions"] or {}
             writer.writerow([case["image"], case["status"], dims.get("unit", ""),
-                             dims.get("length", ""), dims.get("width", ""),
+                             format_dimension(dims.get("length")), format_dimension(dims.get("width")),
                              "; ".join(case["quality_reasons"])+case["error"], case["output"]])
     if previews:
         if len(previews) % 2:
