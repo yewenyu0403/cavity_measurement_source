@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from cavity_measure import (MeasurementError, Settings, build_planar_calibration,
                             cv2, np, measure_array, robust_line, transform_points,
                             write_image, write_json)
-from synthetic_demo import affine_mapping, render_cavity
+from cavity_measurement.synthetic import affine_mapping, render_cavity
 
 
 class MeasurementTests(unittest.TestCase):

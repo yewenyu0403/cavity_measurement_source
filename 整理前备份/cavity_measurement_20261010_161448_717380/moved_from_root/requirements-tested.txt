@@ -1,0 +1,3 @@
+# Exact versions used in the delivered validation run (Python 3.12, Windows x64).
+numpy==2.3.5
+opencv-python-headless==4.14.0.94
