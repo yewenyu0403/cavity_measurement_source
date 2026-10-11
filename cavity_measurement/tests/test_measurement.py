@@ -173,7 +173,7 @@ class MeasurementTests(unittest.TestCase):
             write_image(path,image)
             script = str(Path(__file__).resolve().parents[1]/"cavity_measure.py")
             command = [sys.executable,"-X","utf8",script,"measure","--image",str(path),
-                       "--mm-per-pixel","0.1","--out",str(root/"结果")]
+                       "--mm-per-pixel","0.1","--out",str(root/"结果"),"--detection","strict"]
             result = subprocess.run(command,capture_output=True,encoding="utf-8")
             self.assertEqual(result.returncode,0,result.stderr)
             data = json.loads((root/"结果"/"result.json").read_text(encoding="utf-8"))

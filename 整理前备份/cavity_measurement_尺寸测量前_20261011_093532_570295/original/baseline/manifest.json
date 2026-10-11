@@ -1,0 +1,50 @@
+{
+  "schema_version": 2,
+  "scope": "Four development images; visually reviewed frozen outputs, not manual ground truth or metric standards",
+  "default_images_directory": "../图片",
+  "cases": [
+    {
+      "id": "IMAGE 1",
+      "filename": "矩形腔体1.bmp",
+      "sha256": "7a80f2c74cea4ae60401da13a47df75b406970e045acf6db648a0a95f52c4aab",
+      "image_size": [
+        7008,
+        7000
+      ],
+      "reference_file": "contour_1.json"
+    },
+    {
+      "id": "IMAGE 2",
+      "filename": "矩形腔体2.bmp",
+      "sha256": "1044cec0379a3c37393e877365f2eba10d2da4cc347ca8fb22fd6e203bd495c9",
+      "image_size": [
+        7008,
+        7000
+      ],
+      "reference_file": "contour_2.json"
+    },
+    {
+      "id": "IMAGE 3",
+      "filename": "矩形腔体3.bmp",
+      "sha256": "c690c2711eb4f27cbede80d2b534556fce759b4389f5742cf00b03aae75a52ae",
+      "image_size": [
+        7008,
+        7000
+      ],
+      "reference_file": "contour_3.json"
+    },
+    {
+      "id": "IMAGE 4",
+      "filename": "矩形腔体4.bmp",
+      "sha256": "abbd993a601741103711938d6ecc8baebc71845961a36e63ba643dbd9081d650",
+      "image_size": [
+        7008,
+        7000
+      ],
+      "reference_file": "contour_4.json"
+    }
+  ],
+  "review": "All four new inner contours and a magnified top-edge crop visually checked against user-selected A; old outer references backed up",
+  "boundary_side": "inner",
+  "boundary_target": "A: dark rim to inward brighter cavity; wall-floor junction selected by user"
+}

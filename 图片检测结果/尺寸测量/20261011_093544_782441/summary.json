@@ -1,0 +1,97 @@
+{
+  "passed": 4,
+  "total": 6,
+  "boundary_side": "inner",
+  "cases": [
+    {
+      "image": "矩形腔体1.bmp",
+      "status": "pixel_only",
+      "dimensions": {
+        "unit": "px",
+        "length": 6177.857831921036,
+        "width": 4111.701850830068,
+        "pair_02_spacing": 4111.701850830068,
+        "pair_13_spacing": 6177.857831921036,
+        "definition": "center-section spacings between independently fitted straight optical boundaries; rounded corners excluded; length >= width"
+      },
+      "quality_reasons": [],
+      "error": "",
+      "output": "F:\\文件\\研究生文件\\38所\\cavity_measurement_source\\图片检测结果\\尺寸测量\\20261011_093544_782441\\矩形腔体1.bmp"
+    },
+    {
+      "image": "矩形腔体2.bmp",
+      "status": "pixel_only",
+      "dimensions": {
+        "unit": "px",
+        "length": 6178.4858782189385,
+        "width": 4111.979127600836,
+        "pair_02_spacing": 4111.979127600836,
+        "pair_13_spacing": 6178.4858782189385,
+        "definition": "center-section spacings between independently fitted straight optical boundaries; rounded corners excluded; length >= width"
+      },
+      "quality_reasons": [],
+      "error": "",
+      "output": "F:\\文件\\研究生文件\\38所\\cavity_measurement_source\\图片检测结果\\尺寸测量\\20261011_093544_782441\\矩形腔体2.bmp"
+    },
+    {
+      "image": "矩形腔体3.bmp",
+      "status": "pixel_only",
+      "dimensions": {
+        "unit": "px",
+        "length": 6178.263320373467,
+        "width": 4112.012861120255,
+        "pair_02_spacing": 4112.012861120255,
+        "pair_13_spacing": 6178.263320373467,
+        "definition": "center-section spacings between independently fitted straight optical boundaries; rounded corners excluded; length >= width"
+      },
+      "quality_reasons": [],
+      "error": "",
+      "output": "F:\\文件\\研究生文件\\38所\\cavity_measurement_source\\图片检测结果\\尺寸测量\\20261011_093544_782441\\矩形腔体3.bmp"
+    },
+    {
+      "image": "矩形腔体4.bmp",
+      "status": "pixel_only",
+      "dimensions": {
+        "unit": "px",
+        "length": 6178.421140198986,
+        "width": 4112.213067238673,
+        "pair_02_spacing": 4112.213067238673,
+        "pair_13_spacing": 6178.421140198986,
+        "definition": "center-section spacings between independently fitted straight optical boundaries; rounded corners excluded; length >= width"
+      },
+      "quality_reasons": [],
+      "error": "",
+      "output": "F:\\文件\\研究生文件\\38所\\cavity_measurement_source\\图片检测结果\\尺寸测量\\20261011_093544_782441\\矩形腔体4.bmp"
+    },
+    {
+      "image": "矩形腔体5.bmp",
+      "status": "review_required",
+      "dimensions": null,
+      "quality_reasons": [
+        "edge 2: low inlier fraction",
+        "edge 2: excessive inlier fitting residual",
+        "edge 2: excessive all-sample RMS residual",
+        "edge 2: excessive all-sample p95 residual",
+        "edge 3: excessive all-sample RMS residual",
+        "edge 3: excessive all-sample p95 residual"
+      ],
+      "error": "",
+      "output": "F:\\文件\\研究生文件\\38所\\cavity_measurement_source\\图片检测结果\\尺寸测量\\20261011_093544_782441\\矩形腔体5.bmp"
+    },
+    {
+      "image": "矩形腔体6.bmp",
+      "status": "review_required",
+      "dimensions": null,
+      "quality_reasons": [
+        "edge 2: low inlier fraction",
+        "edge 2: excessive inlier fitting residual",
+        "edge 2: excessive all-sample RMS residual",
+        "edge 2: excessive all-sample p95 residual"
+      ],
+      "error": "",
+      "output": "F:\\文件\\研究生文件\\38所\\cavity_measurement_source\\图片检测结果\\尺寸测量\\20261011_093544_782441\\矩形腔体6.bmp"
+    }
+  ],
+  "output": "F:\\文件\\研究生文件\\38所\\cavity_measurement_source\\图片检测结果\\尺寸测量\\20261011_093544_782441",
+  "scope": "selected optical boundary dimensions; no absolute accuracy or uncertainty certification"
+}

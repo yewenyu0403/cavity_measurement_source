@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "method": "synthetic_ground_truth",
+  "image_size": [
+    1000,
+    760
+  ],
+  "pixel_to_mm": [
+    [
+      0.09563047559630355,
+      0.029237170472273682,
+      -58.92536257761578
+    ],
+    [
+      -0.029237170472273685,
+      0.09563047559630355,
+      -21.72099549045851
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "notes": [
+    "Synthetic calibration only; do not use for camera images."
+  ]
+}

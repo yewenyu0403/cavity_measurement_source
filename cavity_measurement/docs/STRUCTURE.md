@@ -33,3 +33,11 @@
 整理前的程序文件保存在与程序相邻的 `整理前备份/cavity_measurement_时间戳/` 中，包括原始文件清单及哈希。`_deps/` 体积较大且本次未改动，未重复备份。整理时移出的旧文件另外保留在备份中的 `moved_from_root/`，以便核对和恢复。
 
 本次整理不新增尺寸计量能力，不修改轮廓提取参数或四图冻结参考。
+
+## 2026-10-11：新增尺寸测量文件
+
+`src/cavity_measurement/metrology.py` 负责从已确认轮廓计算尺寸；`config/contour_measurement.example.json` 是该流程的质量门限。`tools/measure_folder.py`、`scripts/measure_folder.ps1` 与根目录 `measure_folder.cmd` 提供批量测量，输出到统一结果目录下的 `尺寸测量/时间戳`。`tests/test_contour_measurement.py` 验证新尺寸流程。
+
+## 2026-10-11：单图和批量启动入口合并
+
+根目录 `measure_image.cmd` 统一接受图片或文件夹，`scripts/measure_image.ps1` 根据路径类型选择原单图 CLI 或原批量工具，并共享比例输入。路径处直接回车时使用父目录 `图片`。旧 `measure_folder.cmd` 保留，`scripts/measure_folder.ps1` 改为调用统一脚本的兼容包装，保留原双击即批量测量的方式。算法、基准及输出根目录不修改。
