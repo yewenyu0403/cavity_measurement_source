@@ -22,6 +22,8 @@ F:\文件\研究生文件\38所\cavity_measurement_source\图片检测结果
 
 单图结果包括 `尺寸结果.txt`、`dimensions.csv`、`result.json` 和标注图；批量结果放在 `尺寸测量/时间戳`，另有 `尺寸汇总.csv` 和总览图。每次运行创建独立的时间戳子目录。修改 [config/output_config.json](config/output_config.json) 中的 `output_root` 可更改默认位置；命令行 `--out` 可指定单次运行的位置。
 
+长宽尺寸在标注图、预览图、`尺寸结果.txt`、`dimensions.csv` 和批量 `尺寸汇总.csv` 中统一显示到小数点后三位，像素和毫米单位均适用。算法计算、JSON 和采样点坐标保留原始数值。三位小数是显示格式，不代表达到 0.001 mm 的实际测量精度；毫米计量仍需独立标定及精度验证。
+
 ## 文件布局
 
 ```text

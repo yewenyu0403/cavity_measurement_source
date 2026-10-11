@@ -120,7 +120,7 @@ class ContourMeasurementTests(unittest.TestCase):
             self.assertEqual(completed.returncode, 0, completed.stderr)
             report = json.loads((out/"result.json").read_text(encoding="utf-8"))
             self.assertEqual(report["status"], "pixel_only")
-            self.assertIn("1183.00 px", (out/"尺寸结果.txt").read_text(encoding="utf-8-sig"))
+            self.assertRegex((out/"尺寸结果.txt").read_text(encoding="utf-8-sig"), r"长度：1183\.\d{3} px")
             self.assertTrue((out/"edge_points.csv").is_file())
             write_image(path, np.full_like(image, 140))
             failed = subprocess.run(command, capture_output=True, encoding="utf-8")
@@ -129,7 +129,7 @@ class ContourMeasurementTests(unittest.TestCase):
                 row = list(csv.DictReader(f))[0]
             self.assertEqual(row["status"], "failed")
             self.assertEqual(row["length"], "")
-            self.assertNotIn("1183.00", (out/"尺寸结果.txt").read_text(encoding="utf-8-sig"))
+            self.assertNotIn("长度：1183.", (out/"尺寸结果.txt").read_text(encoding="utf-8-sig"))
 
     def test_batch_keeps_valid_sizes_and_records_failed_images(self):
         workspace = Path(__file__).resolve().parents[1]

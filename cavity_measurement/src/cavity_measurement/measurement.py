@@ -25,6 +25,11 @@ except ImportError as exc:
     raise SystemExit("Install dependencies: python -m pip install -r requirements.txt") from exc
 
 
+def format_dimension(value):
+    """Format displayed sizes; keep computational and JSON values unrounded."""
+    return "" if value is None else f"{value:.3f}"
+
+
 class MeasurementError(ValueError):
     """The input does not provide sufficient trustworthy measurement data."""
 
@@ -529,7 +534,7 @@ def measure_array(image, settings=None, calibration=None, corners=None, roi=None
                     cv2.FONT_HERSHEY_SIMPLEX, .45, colors[i], 1, cv2.LINE_AA)
     label = report["status"]
     if dimensions:
-        label += f"  L={dimensions['length']:.4f} W={dimensions['width']:.4f} {unit}"
+        label += f"  L={format_dimension(dimensions['length'])} W={format_dimension(dimensions['width'])} {unit}"
     cv2.rectangle(overlay, (0,0), (width,40), (20,20,20), -1)
     cv2.putText(overlay, label, (10,27), cv2.FONT_HERSHEY_SIMPLEX, .62,
                 (0,220,255) if reasons else (80,240,80), 1, cv2.LINE_AA)
@@ -626,7 +631,7 @@ def save_result_summary(out, report):
         side = report["contour"]["boundary_side"]
         lines.append("边界：A 内边框（外围黑边靠腔内的一沿）" if side == "inner" else "边界：黑边外侧轮廓")
     if dims:
-        lines += [f"长度：{dims['length']:.2f} {dims['unit']}", f"宽度：{dims['width']:.2f} {dims['unit']}",
+        lines += [f"长度：{format_dimension(dims['length'])} {dims['unit']}", f"宽度：{format_dimension(dims['width'])} {dims['unit']}",
                   "定义：四条直边独立拟合后的中央截面对边间距；圆角不参与拟合，长度取较大值。"]
     else:
         lines.append("没有可接受的长度、宽度结果。")
@@ -641,7 +646,7 @@ def save_result_summary(out, report):
         writer = csv.writer(f)
         writer.writerow(["image", "status", "unit", "length", "width", "pair_02_spacing", "pair_13_spacing"])
         writer.writerow([report.get("input_image", ""), report["status"], dims.get("unit", ""),
-                         *[dims.get(key, "") for key in ("length", "width", "pair_02_spacing", "pair_13_spacing")]])
+                         *[format_dimension(dims.get(key)) for key in ("length", "width", "pair_02_spacing", "pair_13_spacing")]])
 
 
 def save_measurement(out, report, overlay, rows):

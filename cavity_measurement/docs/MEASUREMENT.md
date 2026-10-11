@@ -26,6 +26,10 @@ python tools/verify_baseline.py
 python cavity_measure.py measure --image "..\图片\矩形腔体1.bmp" --measurement-config config/contour_measurement.example.json
 ```
 
+## 尺寸显示位数
+
+长宽尺寸在标注图、预览图、`尺寸结果.txt`、`dimensions.csv` 和批量 `尺寸汇总.csv` 中统一显示到小数点后三位，像素和毫米单位均适用。算法计算、JSON 和采样点坐标保留原始数值。三位小数是显示格式，不代表达到 0.001 mm 的实际测量精度；毫米计量仍需独立标定及精度验证。
+
 ## 测的是什么
 
 先跟踪用户确认的 A：外围黑色边界带靠腔内的一沿。闭合轮廓与圆角保留，但直边拟合只使用各边中间的 56% 区域，即排除两端各 22%；其中没有直接灰度支持的点不参与拟合。
