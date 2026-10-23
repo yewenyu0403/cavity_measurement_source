@@ -115,7 +115,7 @@ class ContourMeasurementTests(unittest.TestCase):
             path, out = root/"腔体.png", root/"结果"
             write_image(path, image)
             command = [sys.executable, "-X", "utf8", str(workspace/"cavity_measure.py"),
-                       "measure", "--image", str(path), "--out", str(out)]
+                       "measure", "--image", str(path), "--out", str(out), "--pixels-only"]
             completed = subprocess.run(command, capture_output=True, encoding="utf-8")
             self.assertEqual(completed.returncode, 0, completed.stderr)
             report = json.loads((out/"result.json").read_text(encoding="utf-8"))
@@ -140,7 +140,7 @@ class ContourMeasurementTests(unittest.TestCase):
             write_image(images/"正常.bmp", image)
             write_image(images/"空白.png", np.full_like(image, 140))
             command = [sys.executable, "-X", "utf8", str(workspace/"tools/measure_folder.py"),
-                       "--images", str(images), "--out", str(out)]
+                       "--images", str(images), "--out", str(out), "--pixels-only"]
             run = subprocess.run(command, capture_output=True, encoding="utf-8")
             self.assertEqual(run.returncode, 2, run.stderr)
             summary = json.loads((out/"summary.json").read_text(encoding="utf-8"))

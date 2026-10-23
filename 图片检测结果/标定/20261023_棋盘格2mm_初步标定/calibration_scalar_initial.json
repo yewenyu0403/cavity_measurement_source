@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "image_size": [
+    7008,
+    7000
+  ],
+  "plane": "user-confirmed cavity measurement plane",
+  "quality_status": "provisional_single_frame_low_contrast",
+  "square_size_mm": 2.0,
+  "reference_point_count": 1044,
+  "reference_image_sha256": "9e115be6805baeec4a7004968d2338b3614204261f94eb2ffa1ebfd92ae20155",
+  "notes": [
+    "用户提供单个黑格或白格边长为 2 mm；未提供标定板检测证书或实际格距修正值。",
+    "用户确认相机、镜头设置和图案面高度与腔体测量条件一致。",
+    "原图为 7008x7000；所有最终坐标和比例在原始像素坐标系中计算。",
+    "本次为单张图像的初步平面比例/仿射标定，不是完整的相机内参和镜头畸变标定。",
+    "图像偏暗并存在明显纹理，部分交点的光学边界不清晰；角点、格心等方法存在约千分之一差异。",
+    "角点拟合残差、同一帧留出点误差与不同算法差异均不是绝对尺寸精度或正式测量不确定度。",
+    "初步参数尚需更清晰的标定图和独立已知长度验证，不能据此宣称微米级准确度。",
+    "标定比例未使用 60.002、40.005 mm 三坐标结果反推；未修改原程序、配置或旧结果。"
+  ],
+  "method": "checkerboard_single_frame_similarity_scale_initial",
+  "mm_per_pixel": 0.009683443764816625
+}

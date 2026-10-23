@@ -1,0 +1,344 @@
+{
+  "schema_version": 1,
+  "image_size": [
+    7008,
+    7000
+  ],
+  "plane": "user-confirmed cavity measurement plane",
+  "quality_status": "provisional_single_frame_low_contrast",
+  "square_size_mm": 2.0,
+  "reference_point_count": 1044,
+  "reference_image_sha256": "9e115be6805baeec4a7004968d2338b3614204261f94eb2ffa1ebfd92ae20155",
+  "notes": [
+    "用户提供单个黑格或白格边长为 2 mm；未提供标定板检测证书或实际格距修正值。",
+    "用户确认相机、镜头设置和图案面高度与腔体测量条件一致。",
+    "原图为 7008x7000；所有最终坐标和比例在原始像素坐标系中计算。",
+    "本次为单张图像的初步平面比例/仿射标定，不是完整的相机内参和镜头畸变标定。",
+    "图像偏暗并存在明显纹理，部分交点的光学边界不清晰；角点、格心等方法存在约千分之一差异。",
+    "角点拟合残差、同一帧留出点误差与不同算法差异均不是绝对尺寸精度或正式测量不确定度。",
+    "初步参数尚需更清晰的标定图和独立已知长度验证，不能据此宣称微米级准确度。",
+    "标定比例未使用 60.002、40.005 mm 三坐标结果反推；未修改原程序、配置或旧结果。"
+  ],
+  "input_image": "C:\\Users\\chyew\\AppData\\Local\\Temp\\codex-clipboard-f9dc3bf0-970a-4359-a946-2765eefc8b2e.png",
+  "columns": 34,
+  "rows": 31,
+  "missing_or_clipped_grid_points": 10,
+  "point_count": 1044,
+  "pitch_u_px": 206.55382722048407,
+  "pitch_v_px": 206.5195393413622,
+  "scale_u_mm_per_px": 0.009682706086414548,
+  "scale_v_mm_per_px": 0.00968431367985061,
+  "global_scalar_mm_per_pixel": 0.009683443764816625,
+  "relative_to_previous_0_009697_percent": -0.1397982384590657,
+  "similarity_fit_residual_mm": {
+    "rms": 0.04239041464243903,
+    "p95": 0.0794535246687257,
+    "max": 0.1835155596867898
+  },
+  "affine_fit_residual_px": {
+    "rms": 4.371408940425861,
+    "p95": 8.245903981482426,
+    "max": 18.68626357317125
+  },
+  "affine_fit_residual_mm": {
+    "rms": 0.0423289537733423,
+    "p95": 0.07984469854947264,
+    "max": 0.18093304530923893
+  },
+  "same_frame_heldout_point_count": 208,
+  "same_frame_heldout_affine_residual_mm": {
+    "rms": 0.04298086554609953,
+    "p95": 0.0807157715040209,
+    "max": 0.15996695406598974
+  },
+  "regions": [
+    {
+      "column": 0,
+      "row": 0,
+      "points": 101,
+      "scale_u_mm_per_px": 0.009679993406899224,
+      "scale_v_mm_per_px": 0.009692941517784156
+    },
+    {
+      "column": 1,
+      "row": 0,
+      "points": 110,
+      "scale_u_mm_per_px": 0.00967657325136775,
+      "scale_v_mm_per_px": 0.009682017826660037
+    },
+    {
+      "column": 2,
+      "row": 0,
+      "points": 119,
+      "scale_u_mm_per_px": 0.00967857746560134,
+      "scale_v_mm_per_px": 0.009685531357190446
+    },
+    {
+      "column": 0,
+      "row": 1,
+      "points": 110,
+      "scale_u_mm_per_px": 0.009688422981165169,
+      "scale_v_mm_per_px": 0.009684849566525086
+    },
+    {
+      "column": 1,
+      "row": 1,
+      "points": 110,
+      "scale_u_mm_per_px": 0.009674429014980099,
+      "scale_v_mm_per_px": 0.00968980475590698
+    },
+    {
+      "column": 2,
+      "row": 1,
+      "points": 120,
+      "scale_u_mm_per_px": 0.009688113231262762,
+      "scale_v_mm_per_px": 0.00968963695572462
+    },
+    {
+      "column": 0,
+      "row": 2,
+      "points": 121,
+      "scale_u_mm_per_px": 0.009687547092603962,
+      "scale_v_mm_per_px": 0.009683921856347403
+    },
+    {
+      "column": 1,
+      "row": 2,
+      "points": 121,
+      "scale_u_mm_per_px": 0.009674585411479093,
+      "scale_v_mm_per_px": 0.00968660198318995
+    },
+    {
+      "column": 2,
+      "row": 2,
+      "points": 132,
+      "scale_u_mm_per_px": 0.009688971303453446,
+      "scale_v_mm_per_px": 0.00968691488060335
+    }
+  ],
+  "method_comparison": {
+    "corner_subpix": {
+      "scale_u_mm_per_px": 0.009682706086414548,
+      "scale_v_mm_per_px": 0.00968431367985061
+    },
+    "four_edge_profiles": {
+      "method": "mean positions of the four adjacent straight grayscale transitions",
+      "point_count": 1027,
+      "pitch_u_px": 206.63769917788127,
+      "pitch_v_px": 206.66232848050774,
+      "scale_u_mm_per_px": 0.00967877598307135,
+      "scale_v_mm_per_px": 0.0096776224999741,
+      "affine_rms_px": 3.133653877726834,
+      "affine_p95_px": 5.463884084809579,
+      "affine_max_px": 8.353202193041817,
+      "edge_pair_gap_median_abs_px": [
+        5.994540876792475,
+        5.995369962984873
+      ],
+      "edge_pair_gap_p95_abs_px": [
+        13.63379719562278,
+        12.986123378849207
+      ]
+    },
+    "periodic_fundamental_diagnostic": {
+      "method": "global checker fundamental periodicity; independent of corner positions",
+      "optimizer_success": true,
+      "optimizer_message": "variable-projection Gauss-Newton with line search",
+      "pitch_u_px": 206.78568456161278,
+      "pitch_v_px": 206.79643179506277,
+      "scale_u_mm_per_px": 0.009671849404082371,
+      "scale_v_mm_per_px": 0.009671346756998298,
+      "sample_count": 73884,
+      "iterations": 6,
+      "model_note": "Periodicity cross-check only; not a lens calibration or uncertainty estimate"
+    },
+    "bright_cell_centroids_diagnostic": [
+      {
+        "threshold_fraction": 0.35,
+        "count": 87,
+        "status": "not_enough_isolated_cells"
+      },
+      {
+        "method": "centroids of complete bright cells; nominal 2 mm grid coordinates",
+        "threshold_fraction": 0.45,
+        "count": 329,
+        "scale_u_mm_per_px": 0.009678337694384309,
+        "scale_v_mm_per_px": 0.009678269391495666,
+        "pitch_u_px": 206.6470568763545,
+        "pitch_v_px": 206.64851525598246,
+        "affine_rms_px": 1.1499912884982202,
+        "affine_p95_px": 2.172732583091384,
+        "affine_max_px": 3.114983506519165
+      },
+      {
+        "method": "centroids of complete bright cells; nominal 2 mm grid coordinates",
+        "threshold_fraction": 0.55,
+        "count": 448,
+        "scale_u_mm_per_px": 0.0096742589372681,
+        "scale_v_mm_per_px": 0.00967337470299532,
+        "pitch_u_px": 206.7341811883296,
+        "pitch_v_px": 206.75307856943743,
+        "affine_rms_px": 1.8510424659353961,
+        "affine_p95_px": 3.304212615633336,
+        "affine_max_px": 5.541515428113778
+      }
+    ],
+    "interpretation": "Different image feature definitions yield about 0.1 percent differences. Diagnostic spread is not a metrological uncertainty estimate."
+  },
+  "pixel_to_mm": [
+    [
+      0.009682616546475195,
+      -4.1643862524969044e-05,
+      -0.5659119702849496
+    ],
+    [
+      4.1159301535136775e-05,
+      0.009684226226353392,
+      -2.3674565009139967
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "extraction": {
+    "candidate_count": 1113,
+    "accepted_count": 1044,
+    "column_count": 34,
+    "row_count": 31,
+    "missing_in_rectangle": 10,
+    "pitch_u_px": 206.55311067109164,
+    "pitch_v_px": 206.5192285879712,
+    "scale_u_mm_per_px": 0.009682739676502544,
+    "scale_v_mm_per_px": 0.009684328252020648,
+    "affine_rms_px": 4.371402504641251,
+    "affine_p95_px": 8.247272781727357,
+    "affine_max_px": 18.697584445431104,
+    "homography_rms_px": 4.369589799137861,
+    "homography_max_px": 18.82039076091056,
+    "largest_affine_residual_points": [
+      {
+        "index": [
+          31,
+          4
+        ],
+        "point": [
+          6479.97265625,
+          1043.5989990234375
+        ],
+        "residual": [
+          13.822690884984695,
+          0.5267457373543039
+        ]
+      },
+      {
+        "index": [
+          24,
+          7
+        ],
+        "point": [
+          5008.50146484375,
+          1666.6474609375
+        ],
+        "residual": [
+          -14.4543861346001,
+          -2.121849740166681
+        ]
+      },
+      {
+        "index": [
+          31,
+          6
+        ],
+        "point": [
+          6481.9951171875,
+          1460.2412109375
+        ],
+        "residual": [
+          14.068750756128793,
+          4.134320477324081
+        ]
+      },
+      {
+        "index": [
+          27,
+          1
+        ],
+        "point": [
+          5649.83544921875,
+          416.1866455078125
+        ],
+        "residual": [
+          12.555066016808269,
+          -10.845138663100272
+        ]
+      },
+      {
+        "index": [
+          2,
+          8
+        ],
+        "point": [
+          462.6431579589844,
+          1893.3118896484375
+        ],
+        "residual": [
+          -17.073500453062707,
+          -1.2879161691012087
+        ]
+      },
+      {
+        "index": [
+          6,
+          1
+        ],
+        "point": [
+          1282.1116943359375,
+          446.2760314941406
+        ],
+        "residual": [
+          -17.592540907408193,
+          0.8089424318941383
+        ]
+      },
+      {
+        "index": [
+          16,
+          0
+        ],
+        "point": [
+          3381.83740234375,
+          227.10107421875
+        ],
+        "residual": [
+          17.508916224726818,
+          -3.069979641529386
+        ]
+      },
+      {
+        "index": [
+          1,
+          10
+        ],
+        "point": [
+          256.65185546875,
+          2304.62939453125
+        ],
+        "residual": [
+          -18.289958868766746,
+          -3.8829201218732123
+        ]
+      }
+    ],
+    "minimum_quadrant_contrast_gray": 20.5,
+    "maximum_subpixel_displacement_px": 17.44406236366778
+  },
+  "subpixel_settings": {
+    "gaussian_sigma_px": 1.5,
+    "window_half_size_px": 30,
+    "corner_quad_contrast_min_gray": 10
+  },
+  "same_frame_validation_is_not_independent_accuracy_verification": true,
+  "publication_destination": "F:\\文件\\研究生文件\\38所\\cavity_measurement_source\\图片检测结果\\标定\\20261023_棋盘格2mm_初步标定"
+}

@@ -8,14 +8,14 @@
 
 ## 四张实拍图与以后复查
 
-把图片或图片文件夹拖到统一入口 `measure_image.cmd` 上即可自动选择单图或批量测量。双击后可输入路径，或在路径处直接回车处理默认 `图片` 目录。未标定时，比例输入直接回车。
+把图片或图片文件夹拖到统一入口 `measure_image.cmd` 上即可自动选择单图或批量测量。双击后可输入路径，或在路径处直接回车处理默认 `图片` 目录。启动后自动读取 `config/calibration.json` 的初步比例 `0.009683443764816625 mm/像素`，不再询问比例。
 程序通过暗边带定位、凸轮廓初始化、原图灰度法向剖面连续跟踪，输出内部边框闭合轮廓，再从四条直边的受支持点独立拟合并计算长宽。
 定位时使用的凸性只约束搜索初值；最终轮廓不强制为矩形或圆弧。
 绿色表示达到灰度支持门限的边界，黄色表示证据较弱且受连续性约束的段落。
 默认 `--boundary-side inner` 跟踪黑边的**内侧暗到亮过渡**，绿色线位于黑边靠腔内的一沿。
 可用 `--boundary-side outer` 对照之前的外侧轮廓；程序依据灰度边缘定位，不采用固定内缩像素数。
 
-默认状态 `pixel_only` 表示像素尺寸检查通过，`dimensions` 给出长度和宽度，单位 `px`；提供独立标定后可返回 `measured` 和毫米尺寸。`review_required` 表示尺寸检查未通过，长度、宽度不输出。只有显式 `--detection outline` 才返回 `contour_detected`、`dimensions: null`，表示仅识别轮廓。
+默认读取已有标定，检查通过时输出 `measured` 和毫米尺寸；显式 `--pixels-only` 可禁用默认标定。状态 `pixel_only` 表示像素尺寸检查通过，`dimensions` 给出长度和宽度，单位 `px`；提供独立标定后可返回 `measured` 和毫米尺寸。`review_required` 表示尺寸检查未通过，长度、宽度不输出。只有显式 `--detection outline` 才返回 `contour_detected`、`dimensions: null`，表示仅识别轮廓。
 尺寸定义和算法门限见 `docs/MEASUREMENT.md`。四张图回归通过不代表实物尺寸精度已经验证。
 
 ```powershell
@@ -63,7 +63,7 @@ python cavity_measure.py demo
 ## 用自己的图测量
 
 **便捷方式：把照片或图片文件夹拖到 `measure_image.cmd` 上。**
-脚本询问已知的毫米/像素比例；未标定直接回车。每次结果放在“图片检测结果”下独立的时间戳子目录。
+脚本自动读取默认标定，不再询问毫米/像素比例。默认文件的分辨率为 7008×7000；不匹配时拒测，避免把缩放图直接按原比例换算。每次结果放在“图片检测结果”下独立的时间戳子目录。
 如需透视补偿、指定 ROI 或使用标定文件，请使用下面的命令行方式。
 
 ### 1. 已知同一测量平面的像素当量
@@ -80,11 +80,14 @@ python cavity_measure.py measure --image "D:\图片\腔体.png" --mm-per-pixel 0
 标量比例不能补偿空间倾斜，也不自动消除镜头畸变。
 不能用被测腔体的设计值 60 × 40 mm 反算比例后，再用该比例“验证”尺寸。
 
-暂时没有标定也可以运行：
+需要只输出像素时，显式忽略默认标定：
 
 ```powershell
-python cavity_measure.py measure --image "D:\图片\腔体.png"
+python cavity_measure.py measure --image "D:\图片\腔体.png" --pixels-only
+python tools/measure_folder.py --pixels-only
 ```
+
+默认标定保存在 `config/calibration.json`，修改该文件可更新所有入口。当前值是单张 2 mm 棋盘格的初步拟合，尚未完成独立精度和镜头畸变验证。Python 函数调用仍需显式传入标定，不会暗中加载默认值。
 
 默认 `--detection auto` 与 `--detection contour` 都识别选定的完整暗边轮廓，并计算尺寸；没有标定且检查通过时为 `pixel_only`。找不到完整暗边、存在多个候选或尺寸证据不足时会拒测，不再自动换测其他区域。旧灰度区域测量请明确使用 `--detection strict`。
 

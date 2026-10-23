@@ -9,7 +9,7 @@ import sys
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 from cavity_measure import (analyze_array, cv2, default_output_path, format_dimension, np, read_image,
-                            read_json, save_measurement, save_result_summary, write_image, write_json)
+                            read_json, resolve_calibration, save_measurement, save_result_summary, write_image, write_json)
 from cavity_measurement.metrology import ContourMeasurementSettings
 
 
@@ -20,6 +20,7 @@ def main(argv=None):
     scale = parser.add_mutually_exclusive_group()
     scale.add_argument("--mm-per-pixel", type=float)
     scale.add_argument("--calibration", type=Path)
+    scale.add_argument("--pixels-only", action="store_true", help="Ignore the default calibration and output pixels")
     parser.add_argument("--measurement-config", type=Path)
     args = parser.parse_args(argv)
     out = args.out or default_output_path().parent/"尺寸测量"/datetime.now().strftime("%Y%m%d_%H%M%S_%f")
@@ -30,9 +31,7 @@ def main(argv=None):
                        if p.is_file() and p.suffix.lower() in (".bmp", ".png", ".jpg", ".jpeg", ".tif", ".tiff"))
         if not paths:
             raise ValueError("No supported image files in the selected folder")
-        calibration = read_json(args.calibration) if args.calibration else None
-        if args.mm_per_pixel is not None:
-            calibration = {"method": "user_scalar_scale", "mm_per_pixel": args.mm_per_pixel}
+        calibration = resolve_calibration(args.calibration, args.mm_per_pixel, args.pixels_only)
         settings = ContourMeasurementSettings(**read_json(args.measurement_config)) if args.measurement_config else None
         if settings:
             settings.validate()

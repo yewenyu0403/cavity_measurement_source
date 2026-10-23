@@ -1,0 +1,37 @@
+{
+  "source_program_root": "F:\\文件\\研究生文件\\38所\\cavity_measurement_source\\cavity_measurement",
+  "program_file_count": 150,
+  "all_program_files_byte_identical": true,
+  "previous_output_folder_byte_identical": true,
+  "input_image_sha256": "c690c2711eb4f27cbede80d2b534556fce759b4389f5742cf00b03aae75a52ae",
+  "input_image_unchanged": true,
+  "scale_mm_per_pixel": 0.009697,
+  "calibration_board_verified": false,
+  "comparison": {
+    "previous_boundary_side": "inner",
+    "new_boundary_side": "inner",
+    "maximum_matching_contour_point_difference_px": 0.0,
+    "pixel_length_difference": 0.0,
+    "pixel_width_difference": 0.0,
+    "conclusion": "The previous result already selected the inner edge. No artificial inward shift was applied."
+  },
+  "dimensions": {
+    "unit": "mm",
+    "length": 59.91061941766158,
+    "width": 39.87418871428311,
+    "pair_02_spacing": 39.87418871428311,
+    "pair_13_spacing": 59.91061941766158,
+    "definition": "center-section spacings between independently fitted straight optical boundaries; rounded corners excluded; length >= width"
+  },
+  "pixel_dimensions": {
+    "unit": "px",
+    "length": 6178.263320373467,
+    "width": 4112.012861120255,
+    "pair_02_spacing": 4112.012861120255,
+    "pair_13_spacing": 6178.263320373467,
+    "definition": "center-section spacings between independently fitted straight optical boundaries; rounded corners excluded; length >= width"
+  },
+  "directly_supported_fraction": 0.998478856099787,
+  "quality_reasons": [],
+  "publication_destination": "F:\\文件\\研究生文件\\38所\\cavity_measurement_source\\图片检测结果\\20261023_黑线内边缘独立复核"
+}

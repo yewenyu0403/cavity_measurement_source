@@ -4,7 +4,7 @@ $taskRoot = Split-Path -Parent $PSScriptRoot
 if ([string]::IsNullOrWhiteSpace($ImagesPath)) {
     $ImagesPath = Join-Path (Split-Path -Parent $taskRoot) '图片'
 }
-# Preserve the old batch shortcut: no scale prompt unless explicitly supplied.
+# Use the shared default calibration unless an explicit scale is supplied.
 $taskParameters = @{ InputPath = $ImagesPath; MmPerPixel = $MmPerPixel }
 if (-not [string]::IsNullOrWhiteSpace($OutputPath)) { $taskParameters.OutputPath = $OutputPath }
 & (Join-Path $PSScriptRoot 'measure_image.ps1') @taskParameters

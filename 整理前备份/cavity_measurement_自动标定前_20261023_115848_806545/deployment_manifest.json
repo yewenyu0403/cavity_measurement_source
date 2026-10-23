@@ -1,0 +1,24 @@
+{
+  "changed_files": [
+    "README.md",
+    "config\\calibration.json",
+    "docs\\MEASUREMENT.md",
+    "docs\\USAGE.md",
+    "scripts\\measure_folder.ps1",
+    "scripts\\measure_image.ps1",
+    "tests\\test_contour.py",
+    "tests\\test_contour_measurement.py",
+    "tests\\test_default_calibration.py",
+    "tools\\measure_folder.py",
+    "src\\cavity_measurement\\measurement.py",
+    "src\\cavity_measurement\\metrology.py"
+  ],
+  "new_files": [
+    "config\\calibration.json",
+    "tests\\test_default_calibration.py"
+  ],
+  "backup": "F:\\文件\\研究生文件\\38所\\cavity_measurement_source\\整理前备份\\cavity_measurement_自动标定前_20261023_115848_806545",
+  "default_mm_per_pixel": 0.009683443764816625,
+  "unit_tests_passed": 34,
+  "smoke_entries_passed": 2
+}
