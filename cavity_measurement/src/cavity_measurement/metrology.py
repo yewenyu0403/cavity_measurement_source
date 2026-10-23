@@ -6,7 +6,7 @@ or metrological uncertainty. Rounded corners and unsupported points are omitted.
 from dataclasses import asdict, dataclass
 import math
 
-from .measurement import (MeasurementError, Settings, check_calibration, cv2,
+from .measurement import (MeasurementError, Settings, calibration_caption, check_calibration, cv2,
                           fit_tls, format_dimension, geometry, np, order_corners, points_array,
                           robust_line, transform_points)
 
@@ -221,7 +221,7 @@ def attach_contour_dimensions(report, overlay, settings=None):
     if dims:
         label += f"  L={format_dimension(dims['length'])}  W={format_dimension(dims['width'])} {unit}"
     color = (0, 220, 255) if reasons else (80, 240, 80)
-    for text, y in [(label, 34), ("NO METRIC CALIBRATION - IMAGE PIXELS ONLY" if matrix is None else "CALIBRATED PLANE - VERIFY ACCURACY INDEPENDENTLY", 69)]:
+    for text, y in [(label, 34), (calibration_caption(calibration), 69)]:
         cv2.putText(overlay, text, (int(12*factor), int(y*factor)), cv2.FONT_HERSHEY_SIMPLEX,
                     .7*factor, color, max(1, int(2*factor)), cv2.LINE_AA)
     return report, overlay, rows

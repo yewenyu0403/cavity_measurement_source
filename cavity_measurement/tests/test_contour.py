@@ -117,7 +117,7 @@ class ContourTests(unittest.TestCase):
             path, out = root/"腔体.png", root/"结果"
             write_image(path, image)
             command = [sys.executable, "-X", "utf8", str(workspace/"cavity_measure.py"),
-                       "measure", "--image", str(path), "--out", str(out), "--detection", "outline"]
+                       "measure", "--image", str(path), "--out", str(out), "--detection", "outline", "--pixels-only"]
             run = subprocess.run(command, capture_output=True, encoding="utf-8")
             self.assertEqual(run.returncode, 0, run.stderr)
             report = json.loads((out/"result.json").read_text(encoding="utf-8"))

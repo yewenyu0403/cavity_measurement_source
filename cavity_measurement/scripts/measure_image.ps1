@@ -22,9 +22,6 @@ if (-not (Test-Path -LiteralPath $InputPath)) {
 $taskInput = Get-Item -LiteralPath $InputPath
 $taskPython = Join-Path $env:USERPROFILE '.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe'
 if (-not (Test-Path -LiteralPath $taskPython)) { $taskPython = 'python' }
-if (-not $PSBoundParameters.ContainsKey('MmPerPixel')) {
-    $MmPerPixel = Read-Host 'Known calibrated mm/pixel (Enter = pixels only)'
-}
 if ($taskInput.PSIsContainer) {
     Write-Host 'Mode: folder measurement'
     $taskArgs = @('-X', 'utf8', (Join-Path $taskRoot 'tools\measure_folder.py'),
@@ -35,7 +32,14 @@ if ($taskInput.PSIsContainer) {
                   'measure', '--image', $taskInput.FullName)
 }
 Write-Host "Input: $($taskInput.FullName)"
-if (-not [string]::IsNullOrWhiteSpace($MmPerPixel)) { $taskArgs += @('--mm-per-pixel', $MmPerPixel.Trim()) }
+if (-not [string]::IsNullOrWhiteSpace($MmPerPixel)) {
+    $taskArgs += @('--mm-per-pixel', $MmPerPixel.Trim())
+    Write-Host "Calibration: explicit scale $($MmPerPixel.Trim()) mm/pixel"
+} elseif (Test-Path -LiteralPath (Join-Path $taskRoot 'config\calibration.json')) {
+    Write-Host 'Calibration: automatic default (config/calibration.json)'
+} else {
+    Write-Host 'Calibration: pixels only (no default calibration file)'
+}
 if (-not [string]::IsNullOrWhiteSpace($OutputPath)) { $taskArgs += @('--out', $OutputPath) }
 & $taskPython @taskArgs
 exit $LASTEXITCODE

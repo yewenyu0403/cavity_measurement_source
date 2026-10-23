@@ -85,6 +85,32 @@ def read_json(path):
         return json.load(f)
 
 
+def resolve_calibration(calibration_path=None, mm_per_pixel=None, pixels_only=False):
+    """CLI calibration: explicit selection overrides the shared default file.
+
+    Library callers still pass calibration explicitly to analyze_array. Missing
+    default files preserve pixel-only use; invalid files must not be ignored.
+    """
+    if sum((calibration_path is not None, mm_per_pixel is not None, bool(pixels_only))) > 1:
+        raise MeasurementError("Choose one of calibration file, scalar scale, or pixels-only")
+    if pixels_only:
+        return None
+    if mm_per_pixel is not None:
+        return {"method": "user_scalar_scale", "mm_per_pixel": mm_per_pixel}
+    if calibration_path is not None:
+        return read_json(calibration_path)
+    default_file = PROJECT_ROOT / "config" / "calibration.json"
+    return read_json(default_file) if default_file.is_file() else None
+
+
+def calibration_caption(calibration):
+    if calibration is None:
+        return "NO METRIC CALIBRATION - IMAGE PIXELS ONLY"
+    if str(calibration.get("quality_status", "")).startswith("provisional"):
+        return "INITIAL CALIBRATION SCALE - ACCURACY NOT VERIFIED"
+    return "CALIBRATED PLANE - VERIFY ACCURACY INDEPENDENTLY"
+
+
 def default_output_path(command="measure"):
     """Resolve the shared output setting, independent of the shell directory."""
     base = PROJECT_ROOT
@@ -640,6 +666,11 @@ def save_result_summary(out, report):
         lines.append(f"错误：{report['error']}")
     if not dims or dims.get("unit") == "px":
         lines.append("未得到毫米尺寸；需要底面所在测量平面的独立标定。")
+    calibration = report.get("calibration")
+    if calibration and str(calibration.get("quality_status", "")).startswith("provisional"):
+        if "mm_per_pixel" in calibration:
+            lines.append(f"默认初步标定比例：{calibration['mm_per_pixel']:.12f} mm/像素。")
+        lines.append("当前标定为初步结果，尚需独立精度验证。")
     lines.append("拟合残差不是测量不确定度；此结果不证明实际尺寸精度或工件合格。")
     (out/"尺寸结果.txt").write_text("\n".join(lines)+"\n", encoding="utf-8-sig")
     with (out/"dimensions.csv").open("w", encoding="utf-8-sig", newline="") as f:
@@ -726,6 +757,7 @@ def main(argv=None):
     c = m.add_mutually_exclusive_group()
     c.add_argument("--calibration", type=Path)
     c.add_argument("--mm-per-pixel", type=float)
+    c.add_argument("--pixels-only", action="store_true", help="Ignore the default calibration and output pixels")
     m.add_argument("--roi", nargs=4, type=int, metavar=("X","Y","W","H"))
     m.add_argument("--corners", type=Path, help="JSON with corners_px: four approximate virtual corners")
     m.add_argument("--config", type=Path, help="JSON object of Settings overrides")
@@ -765,9 +797,7 @@ def main(argv=None):
             config["polarity"] = args.polarity
         if args.band_px is not None:
             config["band_px"] = args.band_px
-        calibration = read_json(args.calibration) if args.calibration else None
-        if args.mm_per_pixel is not None:
-            calibration = {"method":"user_scalar_scale", "mm_per_pixel":args.mm_per_pixel}
+        calibration = resolve_calibration(args.calibration, args.mm_per_pixel, args.pixels_only)
         corners = read_json(args.corners)["corners_px"] if args.corners else None
         if args.detection != "strict" and (args.config or args.polarity or args.band_px is not None):
             raise MeasurementError("--config, --polarity and --band-px apply to --detection strict; use --measurement-config for contour dimensions")
