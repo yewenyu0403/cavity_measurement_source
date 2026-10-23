@@ -41,3 +41,9 @@
 ## 2026-10-11：单图和批量启动入口合并
 
 根目录 `measure_image.cmd` 统一接受图片或文件夹，`scripts/measure_image.ps1` 根据路径类型选择原单图 CLI 或原批量工具，并共享比例输入。路径处直接回车时使用父目录 `图片`。旧 `measure_folder.cmd` 保留，`scripts/measure_folder.ps1` 改为调用统一脚本的兼容包装，保留原双击即批量测量的方式。算法、基准及输出根目录不修改。
+
+## 2026-10-23：删除旧流程文件
+
+旧 `--detection strict` 流程与合成示例已删除：`src/cavity_measurement/synthetic.py`、`config/settings.example.json`、`examples/demo_output/`、根目录 `run_demo.cmd`、`scripts/run_demo.ps1` 和 `tests/test_measurement.py`。平面标定测试移至 `tests/test_calibration.py`。上文表格中的对应行仅作历史记录，原文件可从 git 历史恢复。
+
+同日删除批量兼容入口 `measure_folder.cmd` 与 `scripts/measure_folder.ps1`，统一使用 `measure_image.cmd`。实际执行批量测量的 `tools/measure_folder.py` 保留。

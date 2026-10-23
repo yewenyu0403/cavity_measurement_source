@@ -2,7 +2,7 @@
 
 默认优先识别**外围黑色边界带靠腔内的一沿（含圆角）**，即用户在局部图中确认的 A 边、所需的底面与侧壁交界。
 图像操作定义是沿指向腔内的法向，从深色边界带进入较亮腔内的灰度过渡；单幅图不独立证明交界深度或实体截面。
-默认完成“内轮廓 → 去除圆角段 → 四边独立拟合 → 中央对边间距”的像素尺寸计算；有独立标定时可换算毫米。原有灰度区域定位尺寸流程通过 `--detection strict` 保留。
+默认完成“内轮廓 → 去除圆角段 → 四边独立拟合 → 中央对边间距”的像素尺寸计算；有独立标定时可换算毫米。
 完整轮廓已在用户提供的四张实拍图上进行回归验证；尺寸计算另有独立已知几何、旋转、透视和拒测测试。
 四张实拍图用于本轮开发调参，不能作为独立测试集，也没有提供可追溯的尺寸真值。
 
@@ -25,9 +25,6 @@ python cavity_measure.py measure --image "..\图片\矩形腔体1.bmp" --detecti
 # 对照原来的外侧黑边轮廓
 python cavity_measure.py measure --image "..\图片\矩形腔体1.bmp" --detection outline --boundary-side outer
 
-# 明确调用原有四条直线的尺寸计量流程
-python cavity_measure.py measure --image "D:\图片\腔体.png" --detection strict --calibration calibration.json
-
 # 以后改代码后，用相同的四张图复查
 python tools/verify_baseline.py
 ```
@@ -39,13 +36,10 @@ python tools/verify_baseline.py
 这些参考是**目视复查后的算法输出**，用于发现后续代码回退，不是人工逐点标注的真值或计量基准。
 原图保留在现有 `图片` 目录中，没有改写或重复存储。
 
-## 最快开始
-
-在本机直接双击 `run_demo.cmd` 可生成并测量一个合成的 60 × 40 mm 圆角方腔。
-示例运行后，会打开“图片检测结果/合成示例/时间戳/overlay.png”查看标注结果。
+## 输出位置与安装
 
 当前统一输出位置：`F:\文件\研究生文件\38所\cavity_measurement_source\图片检测结果`。
-测量结果保存到其下的时间戳子目录，合成示例保存到“合成示例/时间戳”，标定文件保存到“标定/时间戳”。
+测量结果保存到其下的时间戳子目录，标定文件保存到“标定/时间戳”。该目录不纳入 git 版本管理。
 路径在程序根目录的 `config/output_config.json` 中设置；修改 `output_root` 即可同时改变所有启动方式的默认位置。
 命令行的 `--out` 仍可单独指定位置。复制到其他电脑后，请同步修改该配置。
 
@@ -53,7 +47,7 @@ python tools/verify_baseline.py
 
 ```powershell
 python -m pip install -r requirements.txt
-python cavity_measure.py demo
+python -m unittest discover -s tests
 ```
 
 要求 Python 3.10 或以上。代码依赖 NumPy 和 OpenCV，不依赖深度学习模型、训练数据或 GPU。
@@ -89,7 +83,7 @@ python tools/measure_folder.py --pixels-only
 
 默认标定保存在 `config/calibration.json`，修改该文件可更新所有入口。当前值是单张 2 mm 棋盘格的初步拟合，尚未完成独立精度和镜头畸变验证。Python 函数调用仍需显式传入标定，不会暗中加载默认值。
 
-默认 `--detection auto` 与 `--detection contour` 都识别选定的完整暗边轮廓，并计算尺寸；没有标定且检查通过时为 `pixel_only`。找不到完整暗边、存在多个候选或尺寸证据不足时会拒测，不再自动换测其他区域。旧灰度区域测量请明确使用 `--detection strict`。
+默认 `--detection auto` 与 `--detection contour` 都识别选定的完整暗边轮廓，并计算尺寸；没有标定且检查通过时为 `pixel_only`。找不到完整暗边、存在多个候选或尺寸证据不足时会拒测，不再自动换测其他区域。
 
 ### 2. 有平面倾斜：用独立参考点进行平面标定
 
@@ -116,7 +110,7 @@ python cavity_measure.py measure --image "cavity.png" --calibration calibration.
 ```
 
 如果已有镜头内参和畸变系数，将其保存为 JSON，标定时增加 `--intrinsics intrinsics.json`。
-工具随后会对参考点、测量图像和人工种子点进行一致的去畸变处理。
+工具随后会对参考点、测量图像和 ROI 进行一致的去畸变处理。
 内参应与当前相机分辨率、焦距和对焦状态一致。
 
 ```json
@@ -131,61 +125,23 @@ python cavity_measure.py measure --image "cavity.png" --calibration calibration.
 
 ### 3. 自动定位不稳定或图中有多个腔体
 
-默认内轮廓模式在 ROI 内寻找完整暗边带，再跟踪 A 内边框；ROI 应包含完整边界并留有余量。以下人工种子与极性参数仅适用于旧 `--detection strict` 流程：它通过孤立亮/暗区域定位，默认腔内比外部暗，亮腔使用 `--polarity bright`。
+默认内轮廓模式在 ROI 内寻找完整暗边带，再跟踪 A 内边框；ROI 应包含完整边界并留有余量。
 
-指定包含一个腔体、四周留有余量的 ROI，数值分别为左上角 x、y、宽、高：
+指定包含一个腔体、四周留有余量的 ROI，数值分别为左上角 x、y、宽、高，使用**原始完整图像坐标**：
 
 ```powershell
 python cavity_measure.py measure --image cavity.png --roi 100 80 800 600 --mm-per-pixel 0.02
 ```
 
-强透视、倒角或多重边缘可能使自动外接矩形偏离目标边，此时提供四个近似的**直边延长线交点**。
-圆角方腔的种子点是虚拟尖角，不是圆弧上任意四个点。
-创建 `corners.json`，然后使用 `--detection strict --corners corners.json`：
-
-```json
-{
-  "corners_px": [[200, 180], [800, 180], [800, 580], [200, 580]]
-}
-```
-
-种子点及 ROI 均使用**原始完整图像坐标**。`--corners` 优先于自动定位，此时 ROI 不参与定位。
-四点会自动按周向排列，边序号 E0～E3 随排列而定，不对应固定的工件 X/Y 轴。
-最终边缘应位于种子线附近，默认搜索带为线两侧各 12 px；完整灰度剖面还需留约 4 px 余量。
-搜索带过大会增加把倒角、反光或底面边界误认为腔口的风险。
-
 ## 算法流程
 
-默认内轮廓尺寸流程见 `docs/MEASUREMENT.md`。以下保留旧 `--detection strict` 流程的说明和参数：
-
-1. 可选：依据相机内参对原图去畸变。
-2. 对 ROI 做 Otsu 阈值分割，使用外接旋转矩形获得四边初值；也可人工指定四角。
-3. 每条种子边默认去掉两端各 22%，避开圆角，只在中间直边取样。
-4. 沿直边法向以 0.25 px 间隔重采样灰度剖面。
-5. 检查对比度、梯度方向与相近强度的多重边缘；歧义剖面不参与拟合。
-6. 对主边缘附近的灰度梯度做背景扣除和局部重心计算，得到亚像素坐标。
-   重心定位对模糊宽度、非对称反射和多重边缘仍敏感；0.25 px 是采样步长，不是精度指标。
-7. 每条边单独做 RANSAC，再用正交最小二乘精拟合；不强制四边平行或垂直。
-8. 若有平面标定，把可靠点转换到毫米平面后重新拟合。
-9. 检查有效点比例、支持范围、拟合残差、对边平行度与邻边正交性。
-10. 在质量检查通过时，输出两组对边在中心截面处的间距，较大者称 `length`，较小者称 `width`。
+内轮廓尺寸流程、质量门限及状态定义见 `docs/MEASUREMENT.md`。
 
 对于不平行的对边，两个无限直线不存在唯一的固定间距。
 因此工具会将状态设为 `review_required`，不输出单一矩形长宽，同时保留 25%、50%、75% 位置的截面间距供分析。
 这些截面间距沿两侧法向的角平分线方向计算，是明确约定的几何量，不自动等同于图纸尺寸定义。
 
-旧 `--detection strict` 的参数保存在 `config/settings.example.json`，可复制修改后通过 `--config my_settings.json` 使用。默认内轮廓尺寸参数见 `config/contour_measurement.example.json`，通过 `--measurement-config my_measurement.json` 使用。
-
-| 参数 | 默认值 | 调整依据 |
-|---|---:|---|
-| `band_px` | 12 | 种子线两侧搜索范围；优先改善定位，不应盲目放宽 |
-| `corner_exclusion` | 0.22 | 每条边两端的排除比例；圆角较大时增大 |
-| `min_gradient` | 5 | 每像素灰度变化阈值；照明过弱时先改善拍摄 |
-| `ransac_threshold_px` | 0.7 | 点到直线的内点阈值 |
-| `max_rms_px` | 0.45 | 内点拟合残差上限 |
-| `max_parallel_angle_deg` | 0.20 | 对边夹角检查阈值 |
-| `max_orthogonal_error_deg` | 0.50 | 邻边偏离 90° 的检查阈值 |
-
+尺寸质量门限见 `config/contour_measurement.example.json`，可复制修改后通过 `--measurement-config my_measurement.json` 使用。
 这些默认值是初始工程参数，**不是图纸公差或计量验收标准**。
 调整门限时应结合实拍图、像素当量和参考测量，而不能只为使结果“通过”。
 
@@ -200,12 +156,6 @@ python cavity_measure.py measure --image cavity.png --roi 100 80 800 600 --mm-pe
 - `result.json`：完整轮廓、状态、灰度支持指标、识别方法与标定信息。
 
 默认尺寸模式另有 `尺寸结果.txt`、`dimensions.csv`、带长宽箭头的标注图，以及 `edge_points.csv`。JSON 中保留独立四边方程、拟合残差与多截面间距。
-
-旧 `strict` 直线流程另有以下诊断：
-
-- `overlay.png`：四边、边缘点、RANSAC 离群点（红色）、拟合残差及测量状态。
-- `result.json`：尺寸、单位、标定信息、四边方程、截面间距和质量检查结果。
-- `edge_points.csv`：每个采样点的图像坐标、内点标志及可选毫米坐标。
 
 | `status` | 含义 | CLI 退出码 |
 |---|---|---:|
@@ -223,11 +173,11 @@ python cavity_measure.py measure --image cavity.png --roi 100 80 800 600 --mm-pe
 ## Python 接口
 
 ```python
-from cavity_measure import Settings, read_image, read_json, analyze_array, save_measurement, default_output_path
+from cavity_measure import read_image, read_json, analyze_array, save_measurement, default_output_path
 
 image = read_image("cavity.png")
 calibration = read_json("calibration.json")
-report, overlay, points = analyze_array(image, Settings(), calibration)
+report, overlay, points = analyze_array(image, calibration=calibration)
 save_measurement(default_output_path(), report, overlay, points)
 if report["dimensions"] is not None:
     print(report["dimensions"]["length"], report["dimensions"]["width"])
@@ -249,9 +199,10 @@ if report["dimensions"] is not None:
 python -m unittest discover -s tests -v
 ```
 
-测试覆盖旋转及噪声、透视补偿、镜头畸变一致处理、标量标定、亮/暗极性、
-低对比度拒测、多腔体拒测和 ROI、未校正梯形、异常标定、RANSAC 离群点、
-错误初值、中文路径、命令行标定以及失败时清除过期尺寸。
+测试覆盖圆角轮廓跟踪与纹理干扰、内外边界、空白及裁切拒测、多腔体拒测和 ROI、
+解析旋转圆角腔尺寸、弱支持点排除、弯曲边界拒测、未标定透视不输出矩形长宽、
+默认标定读取与分辨率拒测、平面标定（透视、镜头畸变、异常参考点、命令行）、
+异常标定、RANSAC 离群点、中文路径、批量部分失败以及失败时清除过期尺寸。
 具体运行记录见 `docs/VALIDATION.md`。
 
 API 依据：[OpenCV 几何形状接口](https://docs.opencv.org/4.x/d3/dc0/group__imgproc__shape.html)、
