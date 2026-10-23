@@ -6,7 +6,7 @@ or metrological uncertainty. Rounded corners and unsupported points are omitted.
 from dataclasses import asdict, dataclass
 import math
 
-from .measurement import (MeasurementError, Settings, calibration_caption, check_calibration, cv2,
+from .measurement import (MeasurementError, calibration_caption, check_calibration, cv2,
                           fit_tls, format_dimension, geometry, np, order_corners, points_array,
                           robust_line, transform_points)
 
@@ -72,8 +72,6 @@ def fit_contour_sides(contour, settings=None, matrix=None):
         normals.append(normal)
     side_ids = np.argmin(distances, axis=0)
     rng = np.random.default_rng(settings.seed)
-    ransac = Settings(min_points=settings.min_points,
-                      ransac_threshold_px=settings.max_rejection_threshold_px)
     edges, reasons = [], []
     for side in range(4):
         fraction = fractions[side]
@@ -84,7 +82,8 @@ def fit_contour_sides(contour, settings=None, matrix=None):
         sample = points[indices]
         if len(sample) < settings.min_points:
             raise MeasurementError(f"Edge {side}: too few directly supported straight-edge points ({len(sample)})")
-        line, inliers = robust_line(sample, normals[side], ransac, rng)
+        line, inliers = robust_line(sample, normals[side], settings.min_points,
+                                    settings.max_rejection_threshold_px, rng)
         for _ in range(12):
             residual = sample @ line[:2]+line[2]
             sigma = 1.4826*np.median(np.abs(residual-np.median(residual)))

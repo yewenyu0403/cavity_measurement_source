@@ -184,3 +184,23 @@ single 验证输出：`F:\文件\研究生文件\38所\cavity_measurement_source
 folder 验证输出：`F:\文件\研究生文件\38所\cavity_measurement_source\图片检测结果\尺寸测量\20261011_105234_925539`。
 
 入口整合前备份：`F:\文件\研究生文件\38所\cavity_measurement_source\整理前备份\cavity_measurement_入口整合前_20261011_105157_815908`。
+
+## 2026-10-23：删除旧 strict 流程与合成示例
+
+删除不属于当前内轮廓检测的代码：`measurement.py` 中的 `Settings`、`detect_seed`、`extract_edge`、`measure_array`，命令行的 `--detection strict`、`--corners`、`--config`、`--polarity`、`--band-px` 与 `demo` 子命令，以及 `synthetic.py`、`run_demo.cmd`、`scripts/run_demo.ps1`、`config/settings.example.json`、`examples/demo_output/`。`tests/test_measurement.py` 的 14 项测试均针对旧流程，一并删除。
+
+当前流程共用的 `robust_line` 改为直接传入最少点数和内点阈值，迭代次数仍为 250，调用参数与随机数顺序不变。`calibrate` 平面标定保留，其透视、镜头畸变、命令行测试改写为直接检查标定文件，连同异常标定和 RANSAC 离群点测试放入 `tests/test_calibration.py`（6 项）。
+
+验证：
+
+- 改动前后对 `图片` 目录 12 张 BMP 分别以默认测量和 `outline` 模式运行，共 24 种情况；完整报告 JSON、标注图像素和拟合点的 SHA-256 全部一致，失败情况的错误信息也一致。
+- 完整自动测试 26/26 通过。
+- `scripts/measure_image.ps1` 单图输出 `measured`；`scripts/measure_folder.ps1` 处理 6 张图，4 张通过、第 5 与 6 张保持复核，退出码 2，与此前一致。
+- `tools/verify_baseline.py` 四图回归 4/4 通过。
+- `--detection strict` 与 `demo` 现在被命令行明确拒绝。
+
+`图片检测结果/` 同时移出 git 跟踪并加入仓库根目录 `.gitignore`，本地结果文件保持不变。
+
+### 删除批量兼容入口
+
+删除 `measure_folder.cmd` 与 `scripts/measure_folder.ps1`，它们只是给 `measure_image.ps1` 补上默认文件夹的转发封装。批量测量改为把文件夹拖到 `measure_image.cmd`，或双击后直接回车；实际批量工具 `tools/measure_folder.py` 不变。
