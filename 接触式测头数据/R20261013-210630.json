@@ -1,0 +1,64 @@
+{
+    "features": [
+        {
+            "actualLength": 60.0033,
+            "actualWidth": 40.0131,
+            "id": "C-R1",
+            "lengthDev": 0.0027499999999918145,
+            "measuredLength": 60.006049999999995,
+            "measuredWidth": 40.016600000000004,
+            "name": "矩形腔体1",
+            "status": "合格",
+            "widthDev": 0.003500000000002501
+        },
+        {
+            "actualLength": 60.0056,
+            "actualWidth": 40.0161,
+            "id": "C-R2",
+            "lengthDev": -0.0002500000000011937,
+            "measuredLength": 60.00535,
+            "measuredWidth": 40.01735,
+            "name": "矩形腔体2",
+            "status": "合格",
+            "widthDev": 0.0012499999999988631
+        },
+        {
+            "actualLength": 60.0067,
+            "actualWidth": 40.0116,
+            "id": "C-R3",
+            "lengthDev": -0.0005000000000023874,
+            "measuredLength": 60.0062,
+            "measuredWidth": 40.0161,
+            "name": "矩形腔体3",
+            "status": "合格",
+            "widthDev": 0.0045000000000001705
+        },
+        {
+            "actualLength": 60.0056,
+            "actualWidth": 40.0133,
+            "id": "C-R4",
+            "lengthDev": 0.003999999999997783,
+            "measuredLength": 60.0096,
+            "measuredWidth": 40.01755,
+            "name": "矩形腔体4",
+            "status": "合格",
+            "widthDev": 0.004249999999998977
+        }
+    ],
+    "id": "R20261013-210630",
+    "mode": "接触式测头（G65 P9811）· 完工综合",
+    "program": "O9001",
+    "result": "合格",
+    "stats": {
+        "lengthMean": 60.0068,
+        "lengthRange": 0.004249999999998977,
+        "lengthStd": 0.001903067698918625,
+        "rejectCount": 0,
+        "widthMean": 40.0169,
+        "widthRange": 0.001449999999998397,
+        "widthStd": 0.0006720615051207392
+    },
+    "summary": "共检测 4 个矩形腔体，全部合格",
+    "time": "2026-10-13 21:06:30",
+    "tolerance": 0.05
+}

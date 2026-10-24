@@ -134,7 +134,7 @@ def _resample(seed, spacing):
     return points, np.column_stack([-tangent[:, 1], tangent[:, 0]])
 
 
-def _continuous_path(gradient, step):
+def _continuous_path(gradient, step, close_cycle=False):
     """Two cyclic passes of Viterbi tracking; bounded shifts suppress tool marks."""
     count, states = gradient.shape
     scores = np.clip(gradient/np.maximum(np.percentile(gradient, 99, axis=1)[:, None], 3),
@@ -160,6 +160,26 @@ def _continuous_path(gradient, step):
     for i in range(count-1, -1, -1):
         path[i] = state
         state = int(back[i, state])
+    if close_cycle and abs(int(path[-1])-int(path[0])) > radius:
+        # Fix the first state from the cyclic warm start and solve a path with
+        # a valid final-to-first transition. Two warm-start passes alone do not
+        # impose that constraint and can leave an artificial seam jump.
+        first = int(path[0])
+        best = np.full(states, -1e6, np.float32)
+        best[first] = scores[0, first]
+        for i in range(1, count):
+            padded = np.pad(best, (radius, radius), constant_values=-1e6)
+            alternatives = np.stack([padded[radius+j:radius+j+states]-p for j, p in zip(jumps, penalty)])
+            choice = alternatives.argmax(axis=0)
+            best = scores[i]+alternatives[choice, indices]
+            best -= best.max()
+            back[i] = indices+jumps[choice]
+        best[np.abs(indices-first) > radius] = -1e6
+        state = int(best.argmax())
+        for i in range(count-1, 0, -1):
+            path[i] = state
+            state = int(back[i, state])
+        path[0] = first
     return path
 
 
@@ -171,11 +191,84 @@ def _longest_false_arc(supported):
     return min(longest, len(supported))/len(supported)
 
 
-def find_opening(gray, roi=None, settings=None):
+def _texture_envelope_seed(gray, roi, settings):
+    """Opt-in initialization through inward branches; never a final contour."""
+    x, y, w, h = _roi(gray, roi)
+    scale = min(1., settings.coarse_max_size/max(w, h))
+    coarse = cv2.resize(gray[y:y+h, x:x+w], None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+    sy, sx = coarse.shape[0]/h, coarse.shape[1]/w
+    blur = cv2.GaussianBlur(coarse, (5, 5), .9)
+    band = cv2.morphologyEx(blur, cv2.MORPH_BLACKHAT,
+                            cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (settings.blackhat_kernel,)*2))
+    mask = cv2.morphologyEx((band > settings.blackhat_threshold).astype(np.uint8)*255,
+                            cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8))
+    contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    candidates = []
+    for i, contour in enumerate(contours):
+        bx, by, bw, bh = cv2.boundingRect(contour)
+        if min(bx, by) < 3 or bx+bw >= coarse.shape[1]-3 or by+bh >= coarse.shape[0]-3:
+            continue
+        depth, parent = 0, int(hierarchy[0, i, 3])
+        while parent >= 0:
+            depth += 1
+            parent = int(hierarchy[0, parent, 3])
+        if depth % 2 != 1:
+            continue
+        hull = cv2.convexHull(contour)
+        area = cv2.contourArea(hull)
+        rw, rh = cv2.minAreaRect(hull)[1]
+        rectangularity = area/max(rw*rh, 1)
+        if not settings.min_area_fraction*coarse.size < area < .90*coarse.size:
+            continue
+        if min(rw, rh) < 40 or rectangularity < settings.min_rectangularity:
+            continue
+        candidates.append((area*rectangularity, hull))
+    if not candidates:
+        raise NoContourFound("No complete dark-rim envelope found; check clipping, occlusion, or specify --roi")
+    candidates.sort(key=lambda c: c[0], reverse=True)
+    if len(candidates) > 1 and candidates[1][0] > .65*candidates[0][0]:
+        raise ValueError("Multiple complete openings found; specify a single-cavity --roi")
+    # A branch can remove an entire corner of the hole, making its convex
+    # envelope cut diagonally across the floor. Use the envelope's oriented
+    # extent to initialize a rounded search strip instead. Neither its sides
+    # nor its provisional radius are used as measurement data.
+    rect = cv2.minAreaRect(candidates[0][1])
+    box = cv2.boxPoints(rect).astype(np.float64)
+    radius = .10*min(rect[1])
+    arcs = []
+    for i, corner in enumerate(box):
+        incoming = corner-box[(i-1) % 4]
+        outgoing = box[(i+1) % 4]-corner
+        incoming /= np.linalg.norm(incoming)
+        outgoing /= np.linalg.norm(outgoing)
+        center = corner-radius*incoming+radius*outgoing
+        first = np.arctan2(-outgoing[1], -outgoing[0])
+        angles = np.linspace(first, first+np.pi/2, 24)
+        arcs.extend(center+radius*np.column_stack((np.cos(angles), np.sin(angles))))
+    seed = np.asarray(arcs)/[sx, sy]+[x, y]
+    if cv2.contourArea(seed.astype(np.float32), oriented=True) < 0:
+        seed = seed[::-1]
+    return seed, {"method": "texture_envelope_rounded_search_seed", "candidate_count": len(candidates),
+                  "seed_rounding_fraction": .10,
+                  "coarse_scale_xy": [sx, sy], "roi_px": [x, y, w, h],
+                  "scope": "initialization only; original-resolution support thresholds unchanged"}
+
+
+def find_opening(gray, roi=None, settings=None, allow_texture_seed=False, seed_override=None,
+                 keep_review_candidates=False):
     """Return a closed contour and evidence in full-resolution x,y coordinates."""
     settings = settings or ContourSettings()
     settings.validate()
-    seed, initialization = _seed(gray, roi, settings)
+    if seed_override is not None:
+        seed = np.asarray(seed_override, np.float64)
+        initialization = {"method": "paired_inner_contour_search_seed", "scope": "search seed only"}
+    else:
+        try:
+            seed, initialization = _seed(gray, roi, settings)
+        except NoContourFound:
+            if not allow_texture_seed:
+                raise
+            seed, initialization = _texture_envelope_seed(gray, roi, settings)
     bases, normals = _resample(seed, settings.sample_spacing_px)
     short_side = min(cv2.minAreaRect(seed.astype(np.float32))[1])
     outward = max(12, settings.outward_search_fraction*min(gray.shape), short_side*0.015)
@@ -198,7 +291,7 @@ def find_opening(gray, roi=None, settings=None):
     if settings.boundary_side == "outer":
         gradient = -gradient
     gradient[~valid_locations] = -1000
-    path = _continuous_path(gradient, step)
+    path = _continuous_path(gradient, step, close_cycle=allow_texture_seed)
     center_offsets = offsets[path]
     strength = gradient[np.arange(len(path)), path]
     # A local derivative centroid refines the tracked edge, without assuming a
@@ -232,11 +325,11 @@ def find_opening(gray, roi=None, settings=None):
         reasons.append("a long boundary segment lacks direct grayscale support")
     if neighbor_steps.max() > 3*settings.sample_spacing_px:
         reasons.append("tracked contour has a discontinuity, including at the closing seam")
-    if reasons:
+    if reasons and not keep_review_candidates:
         raise ValueError("Contour requires review: "+"; ".join(reasons))
     lo, hi = points.min(axis=0), points.max(axis=0)
     return {
-        "closed": True, "point_count": len(points),
+        "closed": bool(neighbor_steps.max() <= 3*settings.sample_spacing_px), "point_count": len(points),
         "boundary_side": settings.boundary_side,
         "boundary_definition": ("dark rim to inward brighter cavity transition; target A, user-selected wall-floor boundary"
                                 if settings.boundary_side == "inner" else
@@ -244,13 +337,14 @@ def find_opening(gray, roi=None, settings=None):
         "points_px": points.tolist(), "gradient_gray_per_px": strength.tolist(),
         "directly_supported": supported.tolist(),
         "bbox_xywh_px": [*lo.tolist(), *(hi-lo).tolist()],
-        "enclosed_area_px2": float(abs(cv2.contourArea(points.astype(np.float32)))),
-        "perimeter_px": float(neighbor_steps.sum()),
+        "enclosed_area_px2": float(abs(cv2.contourArea(points.astype(np.float32)))) if neighbor_steps.max() <= 3*settings.sample_spacing_px else None,
+        "perimeter_px": float(neighbor_steps.sum()) if neighbor_steps.max() <= 3*settings.sample_spacing_px else None,
         "quality": {"supported_fraction": float(supported.mean()),
                     "side_supported_fractions": side_support,
                     "longest_weak_arc_fraction": float(weak_arc),
                     "median_gradient_gray_per_px": float(np.median(strength)),
-                    "maximum_neighbor_step_px": float(neighbor_steps.max())},
+                    "maximum_neighbor_step_px": float(neighbor_steps.max()),
+                    **({"review_reasons": reasons} if reasons else {})},
         "initialization": initialization, "settings": asdict(settings),
         "method": "black-hat dark band; convex seed; continuous grayscale profile tracking; local centroid",
     }

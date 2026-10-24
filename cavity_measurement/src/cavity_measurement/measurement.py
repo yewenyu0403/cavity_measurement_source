@@ -259,13 +259,16 @@ def geometry(lines, center):
     return corners, sections, parallel, orthogonal
 
 
-def contour_array(image, calibration=None, roi=None, boundary_side="inner"):
+def contour_array(image, calibration=None, roi=None, boundary_side="inner", metric_coordinates=True,
+                  texture_seed=False, seed_override=None, keep_review_candidates=False):
     """Identify the complete opening outline; dimensional validation is separate."""
     from .contour import ContourSettings, find_opening
     if image is None or image.dtype != np.uint8 or image.ndim not in (2, 3):
         raise MeasurementError("Expected an 8-bit grayscale or BGR image")
     height, width = image.shape[:2]
     h_mm = check_calibration(calibration, [width, height])
+    if not metric_coordinates:
+        h_mm = None
     if calibration and "camera_matrix" in calibration:
         k = np.asarray(calibration["camera_matrix"], np.float64)
         d = np.asarray(calibration["dist_coeffs"], np.float64)
@@ -279,7 +282,9 @@ def contour_array(image, calibration=None, roi=None, boundary_side="inner"):
             hi = np.minimum(np.ceil(rr.max(axis=0)), [width,height]).astype(int)
             roi = [*lo.tolist(), *(hi-lo).tolist()]
     gray = image if image.ndim == 2 else cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    contour = find_opening(gray, roi, ContourSettings(boundary_side=boundary_side))
+    contour = find_opening(gray, roi, ContourSettings(boundary_side=boundary_side),
+                           allow_texture_seed=texture_seed, seed_override=seed_override,
+                           keep_review_candidates=keep_review_candidates)
     points = np.asarray(contour["points_px"], np.float64)
     if h_mm is not None:
         contour["points_mm"] = transform_points(points, h_mm).tolist()
@@ -289,7 +294,7 @@ def contour_array(image, calibration=None, roi=None, boundary_side="inner"):
         "image_size": [width, height], "initialization": "automatic_dark_rim",
         "coordinate_system": "undistorted_full_image_px" if calibration and "camera_matrix" in calibration
                              else "original_full_image_px",
-        "contour": contour, "calibration": calibration,
+        "contour": contour, "calibration": calibration if metric_coordinates else None,
         "notes": [
             "Complete selected boundary detected, including rounded corners. Dimensional measurement was not performed.",
             "Inner mode follows target A confirmed by the user: dark band to brighter cavity. Single-view optics do not establish depth or metric accuracy.",
@@ -298,18 +303,30 @@ def contour_array(image, calibration=None, roi=None, boundary_side="inner"):
         ],
         "software": {"opencv": cv2.__version__, "numpy": np.__version__},
     }
+    if contour["quality"].get("review_reasons"):
+        report.update({"status": "review_required", "measurement_status": "review_required",
+                       "quality_reasons": contour["quality"]["review_reasons"]})
+        report["notes"][0] = "Unverified contour candidate only: grayscale or continuity checks failed. No dimensions are accepted."
     overlay = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
     integer_points = np.rint(points).astype(np.int32)
     line_width = max(2, int(round(max(width, height)/1400*2)))
-    cv2.polylines(overlay, [integer_points], True, (0, 240, 0), line_width, cv2.LINE_AA)
+    if contour["closed"]:
+        cv2.polylines(overlay, [integer_points], True, (0, 240, 0), line_width, cv2.LINE_AA)
+    else:
+        for i, point in enumerate(integer_points):
+            following = integer_points[(i+1) % len(points)]
+            if np.linalg.norm(following-point) <= 3*contour["settings"]["sample_spacing_px"]:
+                cv2.line(overlay, tuple(point), tuple(following), (0, 240, 0), line_width, cv2.LINE_AA)
     supported = contour["directly_supported"]
     for i, good in enumerate(supported):
-        if not good:
+        if not good and np.linalg.norm(integer_points[(i+1) % len(points)]-integer_points[i]) <= 3*contour["settings"]["sample_spacing_px"]:
             cv2.line(overlay, tuple(integer_points[i]), tuple(integer_points[(i+1) % len(points)]),
                      (0, 220, 255), line_width+1, cv2.LINE_AA)
     factor = max(1., width/1600)
     cv2.rectangle(overlay, (0, 0), (width, int(55*factor)), (20, 20, 20), -1)
     label = f"{boundary_side.upper()} CONTOUR  support={contour['quality']['supported_fraction']:.1%}  dimensions=not measured"
+    if report["status"] == "review_required":
+        label = f"{boundary_side.upper()} REVIEW CANDIDATE - NO ACCEPTED DIMENSIONS"
     cv2.putText(overlay, label, (int(12*factor), int(36*factor)), cv2.FONT_HERSHEY_SIMPLEX,
                 0.7*factor, (80, 240, 80), max(1, int(2*factor)), cv2.LINE_AA)
     return report, overlay, []
@@ -319,8 +336,11 @@ def analyze_array(image, calibration=None, roi=None, detection="auto", boundary_
     """Measure the selected dark-rim boundary; outline mode stops after the contour."""
     if detection not in ("auto", "outline", "contour"):
         raise MeasurementError("detection must be auto, outline, or contour")
+    if boundary_side == "both":
+        from .dual import analyze_both
+        return analyze_both(image, calibration, roi, detection, measurement_settings)
     if boundary_side not in ("inner", "outer"):
-        raise MeasurementError("boundary_side must be inner or outer")
+        raise MeasurementError("boundary_side must be inner, outer, or both")
     report, overlay, rows = contour_array(image, calibration, roi, boundary_side)
     if detection == "outline":
         return report, overlay, rows
@@ -330,6 +350,9 @@ def analyze_array(image, calibration=None, roi=None, detection="auto", boundary_
 
 def save_result_summary(out, report):
     """Write human-readable sizes and a one-row CSV, also clearing failed sizes."""
+    if report.get("boundary_side") == "both":
+        from .dual import save_both_summary
+        return save_both_summary(out, report)
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
     dims = report.get("dimensions") or {}
@@ -351,7 +374,7 @@ def save_result_summary(out, report):
     if report.get("error"):
         lines.append(f"错误：{report['error']}")
     if not dims or dims.get("unit") == "px":
-        lines.append("未得到毫米尺寸；需要底面所在测量平面的独立标定。")
+        lines.append("未得到毫米尺寸；需要所选边缘所在测量平面的独立标定。")
     calibration = report.get("calibration")
     if calibration and str(calibration.get("quality_status", "")).startswith("provisional"):
         if "mm_per_pixel" in calibration:
@@ -367,6 +390,9 @@ def save_result_summary(out, report):
 
 
 def save_measurement(out, report, overlay, rows):
+    if report.get("boundary_side") == "both":
+        from .dual import save_both
+        return save_both(out, report, overlay, rows)
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
     write_json(out / "result.json", report)
@@ -375,7 +401,8 @@ def save_measurement(out, report, overlay, rows):
     if "contour" in report:
         contour = report["contour"]
         mask = np.zeros(overlay.shape[:2], np.uint8)
-        cv2.fillPoly(mask, [np.rint(contour["points_px"]).astype(np.int32)], 255)
+        if contour["closed"]:
+            cv2.fillPoly(mask, [np.rint(contour["points_px"]).astype(np.int32)], 255)
         write_image(out / "contour_mask.png", mask)
         with open(out / "contour_points.csv", "w", encoding="utf-8-sig", newline="") as f:
             writer = csv.writer(f)
@@ -447,8 +474,8 @@ def main(argv=None):
     m.add_argument("--detection", choices=["auto", "outline", "contour"], default="auto",
                    help="auto/contour: selected dark-rim contour and dimensions; outline: contour only")
     m.add_argument("--measurement-config", type=Path, help="JSON overrides for ContourMeasurementSettings")
-    m.add_argument("--boundary-side", choices=["inner", "outer"], default="inner",
-                   help="inner (default): target A, dark rim to cavity; outer: previous exterior edge")
+    m.add_argument("--boundary-side", choices=["inner", "outer", "both"], default="inner",
+                   help="inner (default): target A; outer: exterior rim; both: separate results and comparison overlay")
     c = sub.add_parser("calibrate", help="Fit planar pixel-to-mm mapping from independent reference points")
     c.add_argument("--image", required=True, type=Path)
     c.add_argument("--points", required=True, type=Path)
@@ -465,7 +492,8 @@ def main(argv=None):
             print(json.dumps({"calibration_file": str(args.out),
                               "reference_fit_rms_mm": result["reference_fit_rms_mm"]}, ensure_ascii=False))
             return 0
-        calibration = resolve_calibration(args.calibration, args.mm_per_pixel, args.pixels_only)
+        outer_pixels = args.boundary_side == "outer" and args.calibration is None and args.mm_per_pixel is None
+        calibration = resolve_calibration(args.calibration, args.mm_per_pixel, args.pixels_only or outer_pixels)
         measurement_settings = None
         if args.measurement_config:
             if args.detection == "outline":
@@ -479,6 +507,10 @@ def main(argv=None):
         save_measurement(args.out, report, overlay, rows)
         summary = {"status": report["status"], "dimensions": report["dimensions"],
                    "quality_reasons": report["quality_reasons"], "output": str(args.out.resolve())}
+        if args.boundary_side == "both":
+            from .dual import boundary_cases
+            summary.update({"boundary_side": "both", "boundaries": boundary_cases(report),
+                            "message": "外边缘与底面候选边缘已分别处理；请分别查看状态和单位。"})
         if "contour" in report:
             boundary = "A 内边框" if args.boundary_side == "inner" else "黑边外侧轮廓"
             if report["status"] == "contour_detected":
@@ -493,15 +525,21 @@ def main(argv=None):
                             "contour_point_count": report["contour"]["point_count"],
                             "supported_fraction": report["contour"]["quality"]["supported_fraction"]})
         print(json.dumps(summary, ensure_ascii=False, allow_nan=False))
-        return 2 if report["status"] == "review_required" else 0
+        return 2 if report["status"] in ("review_required", "failed") else 0
     except (ValueError, OSError, KeyError, TypeError, cv2.error) as exc:
         error = {"status":"failed", "dimensions":None, "error":str(exc)}
+        if args.command == "measure" and args.boundary_side == "both":
+            from .dual import failed_both
+            error = failed_both(str(exc), str(args.image.resolve()))
         # The current result must never retain dimensions from an earlier run.
         if args.out is not None:
             target = args.out.parent if args.command == "calibrate" else args.out
             try:
-                write_json(Path(target)/("failure.json" if args.command == "calibrate" else "result.json"), error)
-                if args.command == "measure":
+                if args.command == "measure" and args.boundary_side == "both":
+                    save_measurement(target, error, None, {})
+                else:
+                    write_json(Path(target)/("failure.json" if args.command == "calibrate" else "result.json"), error)
+                if args.command == "measure" and args.boundary_side != "both":
                     save_result_summary(target, error)
             except OSError:
                 pass
