@@ -11,6 +11,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from cavity_measure import (analyze_array, cv2, default_output_path, format_dimension, np, read_image,
                             read_json, resolve_calibration, save_measurement, save_result_summary, write_image, write_json)
 from cavity_measurement.metrology import ContourMeasurementSettings
+from cavity_measurement.dual import boundary_cases, failed_both
 
 
 def main(argv=None):
@@ -22,6 +23,7 @@ def main(argv=None):
     scale.add_argument("--calibration", type=Path)
     scale.add_argument("--pixels-only", action="store_true", help="Ignore the default calibration and output pixels")
     parser.add_argument("--measurement-config", type=Path)
+    parser.add_argument("--boundary-side", choices=["inner", "outer", "both"], default="inner")
     args = parser.parse_args(argv)
     out = args.out or default_output_path().parent/"尺寸测量"/datetime.now().strftime("%Y%m%d_%H%M%S_%f")
     try:
@@ -31,7 +33,8 @@ def main(argv=None):
                        if p.is_file() and p.suffix.lower() in (".bmp", ".png", ".jpg", ".jpeg", ".tif", ".tiff"))
         if not paths:
             raise ValueError("No supported image files in the selected folder")
-        calibration = resolve_calibration(args.calibration, args.mm_per_pixel, args.pixels_only)
+        outer_pixels = args.boundary_side == "outer" and args.calibration is None and args.mm_per_pixel is None
+        calibration = resolve_calibration(args.calibration, args.mm_per_pixel, args.pixels_only or outer_pixels)
         settings = ContourMeasurementSettings(**read_json(args.measurement_config)) if args.measurement_config else None
         if settings:
             settings.validate()
@@ -44,7 +47,7 @@ def main(argv=None):
         target = out/path.name  # Keep the extension to avoid equal-stem collisions.
         try:
             report, overlay, rows = analyze_array(read_image(path), calibration=calibration,
-                                                  detection="contour", boundary_side="inner",
+                                                  detection="contour", boundary_side=args.boundary_side,
                                                   measurement_settings=settings)
             report["input_image"] = str(path.resolve())
             save_measurement(target, report, overlay, rows)
@@ -58,26 +61,37 @@ def main(argv=None):
         except (ValueError, OSError, KeyError, TypeError, cv2.error) as exc:
             report = {"status": "failed", "dimensions": None, "error": str(exc),
                       "input_image": str(path.resolve())}
-            write_json(target/"result.json", report)
-            save_result_summary(target, report)
+            if args.boundary_side == "both":
+                report = failed_both(str(exc), str(path.resolve()))
+                save_measurement(target, report, None, {})
+            else:
+                write_json(target/"result.json", report)
+                save_result_summary(target, report)
         case = {"image": path.name, "status": report["status"], "dimensions": report["dimensions"],
                 "quality_reasons": report.get("quality_reasons", []), "error": report.get("error", ""),
                 "output": str(target.resolve())}
         cases.append(case)
+        if args.boundary_side == "both":
+            case["boundaries"] = boundary_cases(report)
         print(json.dumps(case, ensure_ascii=False))
-    passed = sum(case["dimensions"] is not None for case in cases)
-    summary = {"passed": passed, "total": len(cases), "boundary_side": "inner", "cases": cases,
+    passed = sum(case["status"] == "completed" if args.boundary_side == "both"
+                 else case["dimensions"] is not None for case in cases)
+    summary = {"passed": passed, "total": len(cases), "boundary_side": args.boundary_side, "cases": cases,
                "output": str(out.resolve()),
                "scope": "selected optical boundary dimensions; no absolute accuracy or uncertainty certification"}
     write_json(out/"summary.json", summary)
     with (out/"尺寸汇总.csv").open("w", encoding="utf-8-sig", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["图片", "状态", "单位", "长度", "宽度", "检查信息", "结果目录"])
+        headers = ["图片", "状态", "单位", "长度", "宽度", "检查信息", "结果目录"]
+        writer.writerow((["边缘"]+headers) if args.boundary_side == "both" else headers)
         for case in cases:
-            dims = case["dimensions"] or {}
-            writer.writerow([case["image"], case["status"], dims.get("unit", ""),
-                             format_dimension(dims.get("length")), format_dimension(dims.get("width")),
-                             "; ".join(case["quality_reasons"])+case["error"], case["output"]])
+            entries = case["boundaries"] if args.boundary_side == "both" else [case]
+            for entry in entries:
+                dims = entry["dimensions"] or {}
+                values = [case["image"], entry["status"], dims.get("unit", ""),
+                          format_dimension(dims.get("length")), format_dimension(dims.get("width")),
+                          "; ".join(entry["quality_reasons"])+entry["error"], case["output"]]
+                writer.writerow(([entry["boundary_label"]]+values) if args.boundary_side == "both" else values)
     if previews:
         if len(previews) % 2:
             previews.append(np.zeros_like(previews[0]))

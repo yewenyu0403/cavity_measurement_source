@@ -1,0 +1,64 @@
+{
+    "features": [
+        {
+            "actualLength": 60.0033,
+            "actualWidth": 40.0131,
+            "id": "C-R1",
+            "lengthDev": -0.0035999999999987153,
+            "measuredLength": 59.999700000000004,
+            "measuredWidth": 40.01349999999999,
+            "name": "矩形腔体1",
+            "status": "合格",
+            "widthDev": 0.00039999999999196234
+        },
+        {
+            "actualLength": 60.0056,
+            "actualWidth": 40.0161,
+            "id": "C-R2",
+            "lengthDev": 0.0021999999999948727,
+            "measuredLength": 60.007799999999996,
+            "measuredWidth": 40.018299999999996,
+            "name": "矩形腔体2",
+            "status": "合格",
+            "widthDev": 0.0021999999999948727
+        },
+        {
+            "actualLength": 60.0067,
+            "actualWidth": 40.0116,
+            "id": "C-R3",
+            "lengthDev": -0.0010000000000047748,
+            "measuredLength": 60.0057,
+            "measuredWidth": 40.0106,
+            "name": "矩形腔体3",
+            "status": "合格",
+            "widthDev": -0.0010000000000047748
+        },
+        {
+            "actualLength": 60.0056,
+            "actualWidth": 40.0133,
+            "id": "C-R4",
+            "lengthDev": -7.105427357601002e-15,
+            "measuredLength": 60.005599999999994,
+            "measuredWidth": 40.0109,
+            "name": "矩形腔体4",
+            "status": "合格",
+            "widthDev": -0.002400000000001512
+        }
+    ],
+    "id": "R20261015-102839",
+    "mode": "接触式测头（G65 P9811）· 完工综合",
+    "program": "O9001",
+    "result": "合格",
+    "stats": {
+        "lengthMean": 60.00469999999999,
+        "lengthRange": 0.00809999999999178,
+        "lengthStd": 0.0034842502780328953,
+        "rejectCount": 0,
+        "widthMean": 40.013324999999995,
+        "widthRange": 0.007699999999999818,
+        "widthStd": 0.0035631212908526907
+    },
+    "summary": "共检测 4 个矩形腔体，全部合格",
+    "time": "2026-10-15 10:28:39",
+    "tolerance": 0.05
+}

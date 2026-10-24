@@ -1,6 +1,28 @@
 # 圆角方腔内部边框识别与尺寸检测工具
 
-默认优先识别**外围黑色边界带靠腔内的一沿（含圆角）**，即用户在局部图中确认的 A 边、所需的底面与侧壁交界。
+快捷入口 `measure_image.cmd` 现在默认同时识别**黑色边界带的外沿**和**靠腔内的 A 内沿（底面候选边缘）**，均保留圆角。A 内沿的实际物理高度尚未验证。
+
+## 外边缘与底面候选边缘同时检测（2026-10-24）
+
+用法仍是拖入一张图片或一个文件夹，无需额外输入标定比例。绿色是 A 内沿，品红色是外沿，黄色轮廓段是弱灰度支持；轨迹发生断裂时不强行连成闭合边框。
+
+- 对比图和双边缘汇总在时间戳根目录；`底面边缘/`、`外边缘/` 分别保存各自结果、轮廓坐标和标注图。
+- 当前初步标定仅用于 A 内沿，双边缘模式中的外沿只输出像素；不能将两种单位直接相减，或将两轮廓的间距解释为壁厚、腔深。
+- 单独使用 `--boundary-side outer` 时也不会自动套用 A 内沿的默认标定；只有显式提供适用于外沿平面的 `--calibration` 或 `--mm-per-pixel` 才换算毫米。
+- `completed` 表示两条边均完成指定的检测／测量检查；只做轮廓时不输出尺寸。任一边需要复核，整体为 `review_required`；另一条通过的边缘仍保存自己的结果。两边都无法定位时为 `failed`。退出码分别为 0、2、2。
+- 检查不通过的候选轨迹可以显示和导出，但其尺寸为空；未闭合候选不生成实心掩膜、面积或周长。它不代表完整边界已识别成功。
+- 根 JSON 使用 `boundaries.inner`、`boundaries.outer` 存储两条独立结果，根 `dimensions=null`；CSV 每条边一行。
+
+Python 原默认仍为 `inner`。命令示例：
+
+```powershell
+python cavity_measure.py measure --image "..\图片\2026-10-23_10-03-51\矩形腔体2.bmp" --boundary-side both
+python tools/measure_folder.py --images "..\图片\底面" --boundary-side both
+python cavity_measure.py measure --image "..\图片\矩形腔体1.bmp" --boundary-side outer
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/measure_image.ps1 -InputPath "..\图片\矩形腔体1.bmp" -BoundarySide inner
+```
+
+以下原有单边示例仍有效。
 图像操作定义是沿指向腔内的法向，从深色边界带进入较亮腔内的灰度过渡；单幅图不独立证明交界深度或实体截面。
 默认完成“内轮廓 → 去除圆角段 → 四边独立拟合 → 中央对边间距”的像素尺寸计算；有独立标定时可换算毫米。
 完整轮廓已在用户提供的四张实拍图上进行回归验证；尺寸计算另有独立已知几何、旋转、透视和拒测测试。

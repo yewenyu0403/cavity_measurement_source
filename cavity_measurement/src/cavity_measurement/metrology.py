@@ -210,7 +210,7 @@ def attach_contour_dimensions(report, overlay, settings=None):
     ]
     if calibration and "mm_per_pixel" in calibration:
         report["notes"].append("Scalar scale assumes a frontoparallel plane; it cannot compensate perspective.")
-    if not calibration or "camera_matrix" not in calibration:
+    if report.get("coordinate_system") != "undistorted_full_image_px":
         report["notes"].append("No lens-distortion correction was applied.")
     width = overlay.shape[1]
     factor = max(1., width/1600)

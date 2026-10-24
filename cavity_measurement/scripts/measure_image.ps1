@@ -1,9 +1,11 @@
 ﻿param(
     [Alias('ImagePath', 'ImagesPath')][string]$InputPath,
     [string]$MmPerPixel,
-    [string]$OutputPath
+    [string]$OutputPath,
+    [ValidateSet('inner', 'outer', 'both')][string]$BoundarySide = 'both'
 )
 $ErrorActionPreference = 'Stop'
+$env:PYTHONDONTWRITEBYTECODE = '1'
 [Console]::InputEncoding = [System.Text.UTF8Encoding]::new($false)
 [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
 $taskRoot = Split-Path -Parent $PSScriptRoot
@@ -32,9 +34,13 @@ if ($taskInput.PSIsContainer) {
                   'measure', '--image', $taskInput.FullName)
 }
 Write-Host "Input: $($taskInput.FullName)"
+$taskArgs += @('--boundary-side', $BoundarySide)
+Write-Host "Boundary mode: $BoundarySide (inner = A floor candidate; outer = exterior rim)"
 if (-not [string]::IsNullOrWhiteSpace($MmPerPixel)) {
     $taskArgs += @('--mm-per-pixel', $MmPerPixel.Trim())
     Write-Host "Calibration: explicit scale $($MmPerPixel.Trim()) mm/pixel"
+} elseif ($BoundarySide -eq 'outer') {
+    Write-Host 'Calibration: outer pixels only (no outer-plane calibration supplied)'
 } elseif (Test-Path -LiteralPath (Join-Path $taskRoot 'config\calibration.json')) {
     Write-Host 'Calibration: automatic default (config/calibration.json)'
 } else {
