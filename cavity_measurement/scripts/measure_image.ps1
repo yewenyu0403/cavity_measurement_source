@@ -2,7 +2,11 @@
     [Alias('ImagePath', 'ImagesPath')][string]$InputPath,
     [string]$MmPerPixel,
     [string]$OutputPath,
+<<<<<<< HEAD
     [ValidateSet('inner', 'outer', 'both')][string]$BoundarySide = 'inner'
+=======
+    [ValidateSet('inner', 'outer', 'both')][string]$BoundarySide = 'both'
+>>>>>>> ca0e77ee125e049605093452d1724d6d6f28137f
 )
 $ErrorActionPreference = 'Stop'
 $env:PYTHONDONTWRITEBYTECODE = '1'
@@ -35,7 +39,11 @@ if ($taskInput.PSIsContainer) {
 }
 Write-Host "Input: $($taskInput.FullName)"
 $taskArgs += @('--boundary-side', $BoundarySide)
+<<<<<<< HEAD
 Write-Host "Boundary mode: $BoundarySide"
+=======
+Write-Host "Boundary mode: $BoundarySide (inner = A floor candidate; outer = exterior rim)"
+>>>>>>> ca0e77ee125e049605093452d1724d6d6f28137f
 if (-not [string]::IsNullOrWhiteSpace($MmPerPixel)) {
     $taskArgs += @('--mm-per-pixel', $MmPerPixel.Trim())
     Write-Host "Calibration: explicit scale $($MmPerPixel.Trim()) mm/pixel"

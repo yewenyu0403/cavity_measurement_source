@@ -4,6 +4,7 @@
     7008,
     7000
   ],
+<<<<<<< HEAD
   "square_size_mm": 10.0,
   "reference_image_count": 20,
   "reference_point_count": 773,
@@ -127,4 +128,25 @@
   "installed_date": "2026-10-29",
   "source_calibration": "C:\\Users\\chyew\\Desktop\\38所军工文献调研\\视觉文献\\calibration_20_images_20261028\\calibration_scalar_candidate.json",
   "source_calibration_sha256": "616b1ba2a41803b1b576b05c18c95e24f6200da65ad48479ffc67692220988e4"
+=======
+  "plane": "user-confirmed cavity measurement plane",
+  "quality_status": "provisional_single_frame_low_contrast",
+  "square_size_mm": 2.0,
+  "reference_point_count": 1044,
+  "reference_image_sha256": "9e115be6805baeec4a7004968d2338b3614204261f94eb2ffa1ebfd92ae20155",
+  "notes": [
+    "用户提供单个黑格或白格边长为 2 mm；未提供标定板检测证书或实际格距修正值。",
+    "用户确认相机、镜头设置和图案面高度与腔体测量条件一致。",
+    "原图为 7008x7000；所有最终坐标和比例在原始像素坐标系中计算。",
+    "本次为单张图像的初步平面比例/仿射标定，不是完整的相机内参和镜头畸变标定。",
+    "图像偏暗并存在明显纹理，部分交点的光学边界不清晰；角点、格心等方法存在约千分之一差异。",
+    "角点拟合残差、同一帧留出点误差与不同算法差异均不是绝对尺寸精度或正式测量不确定度。",
+    "初步参数尚需更清晰的标定图和独立已知长度验证，不能据此宣称微米级准确度。",
+    "比例来自 2 mm 棋盘格图像拟合，未使用 60.002、40.005 mm 三坐标参考尺寸反推。"
+  ],
+  "method": "checkerboard_single_frame_similarity_scale_initial",
+  "mm_per_pixel": 0.009683443764816625,
+  "installed_as_default": true,
+  "source_calibration": "图片检测结果/标定/20261023_棋盘格2mm_初步标定/calibration_scalar_initial.json"
+>>>>>>> ca0e77ee125e049605093452d1724d6d6f28137f
 }
