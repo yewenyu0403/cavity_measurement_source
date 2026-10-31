@@ -74,19 +74,24 @@ def analyze_both(image, calibration=None, roi=None, detection="auto", measuremen
               "notes": ["Inner = user-selected A dark-to-bright edge, treated as a floor candidate; physical depth is unverified.",
                         "Outer = exterior-to-dark edge of the same visible rim; no depth or wall thickness is inferred.",
                         "The existing metric calibration applies to the inner edge only; the outer edge is pixel-only."]}
-    overlay = comparison_overlay(image, report, calibration)
+    measured_inner = payload.get("inner", (None, []))[0] if boundaries["inner"].get("dimensions") else None
+    overlay = comparison_overlay(image, report, calibration, measurement_overlay=measured_inner)
     for side in SIDES:
         if side not in payload:
             payload[side] = (comparison_overlay(image, dict(report, boundaries={side: boundaries[side]}), calibration), [])
     return report, overlay, payload
 
 
-def comparison_overlay(image, report, calibration=None):
-    if calibration and "camera_matrix" in calibration:
-        k = np.asarray(calibration["camera_matrix"], np.float64)
-        image = cv2.undistort(image, k, np.asarray(calibration["dist_coeffs"], np.float64), None, k)
-    gray = image if image.ndim == 2 else cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    overlay = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
+def comparison_overlay(image, report, calibration=None, measurement_overlay=None):
+    if measurement_overlay is not None:
+        # Preserve accepted A-edge dimensions and arrows in the main comparison.
+        overlay = measurement_overlay.copy()
+    else:
+        if calibration and "camera_matrix" in calibration:
+            k = np.asarray(calibration["camera_matrix"], np.float64)
+            image = cv2.undistort(image, k, np.asarray(calibration["dist_coeffs"], np.float64), None, k)
+        gray = image if image.ndim == 2 else cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        overlay = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
     factor = max(1., overlay.shape[1]/1600)
     thickness = max(2, int(round(factor)))
     for side, result in report["boundaries"].items():

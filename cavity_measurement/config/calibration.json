@@ -4,23 +4,127 @@
     7008,
     7000
   ],
-  "plane": "user-confirmed cavity measurement plane",
-  "quality_status": "provisional_single_frame_low_contrast",
-  "square_size_mm": 2.0,
-  "reference_point_count": 1044,
-  "reference_image_sha256": "9e115be6805baeec4a7004968d2338b3614204261f94eb2ffa1ebfd92ae20155",
-  "notes": [
-    "用户提供单个黑格或白格边长为 2 mm；未提供标定板检测证书或实际格距修正值。",
-    "用户确认相机、镜头设置和图案面高度与腔体测量条件一致。",
-    "原图为 7008x7000；所有最终坐标和比例在原始像素坐标系中计算。",
-    "本次为单张图像的初步平面比例/仿射标定，不是完整的相机内参和镜头畸变标定。",
-    "图像偏暗并存在明显纹理，部分交点的光学边界不清晰；角点、格心等方法存在约千分之一差异。",
-    "角点拟合残差、同一帧留出点误差与不同算法差异均不是绝对尺寸精度或正式测量不确定度。",
-    "初步参数尚需更清晰的标定图和独立已知长度验证，不能据此宣称微米级准确度。",
-    "比例来自 2 mm 棋盘格图像拟合，未使用 60.002、40.005 mm 三坐标参考尺寸反推。"
+  "square_size_mm": 10.0,
+  "reference_image_count": 20,
+  "reference_point_count": 773,
+  "plane": "User-confirmed same camera/lens settings and measurement-plane height.",
+  "quality_status": "provisional_20_frame_plane_calibration_no_independent_length_validation",
+  "reference_images": [
+    {
+      "path": "E:\\标定数值\\capture_20261025_204421_898.png",
+      "sha256": "96af49fd772615a61a586926989f42fb4cccc116292384a8c5c33944ced0f177",
+      "point_count": 42
+    },
+    {
+      "path": "E:\\标定数值\\capture_20261028_214242_320.png",
+      "sha256": "253bc8559ab93cd3061641629f7e2fe4306c322a87697e2e50e08914d2dc4f96",
+      "point_count": 42
+    },
+    {
+      "path": "E:\\标定数值\\capture_20261028_213254_999.png",
+      "sha256": "f20b66246e69bea518e590cd5695dea790bd9b5a903bd7d05dacdb62f25f8156",
+      "point_count": 42
+    },
+    {
+      "path": "E:\\标定数值\\capture_20261025_205331_674.png",
+      "sha256": "724b6affa4a4d6e58d910efa1315228cdf5a75c4ad9720d5e5d7699aaca6e724",
+      "point_count": 49
+    },
+    {
+      "path": "E:\\标定数值\\capture_20261028_214212_893.png",
+      "sha256": "de0937590c27d003cff1798eace50a8ddb8cff7daaa0677da4da76682d8ba212",
+      "point_count": 42
+    },
+    {
+      "path": "E:\\标定数值\\capture_20261028_214038_591.png",
+      "sha256": "596253b31253c2d28b0cbb12f55ae3d19a99e8f8673bf5a8c8eac5d7adb1b5b9",
+      "point_count": 36
+    },
+    {
+      "path": "E:\\标定数值\\capture_20261028_213957_745.png",
+      "sha256": "6fff00c900619024018cdf465949f939c08fbced38c1919f4daee2df4460452f",
+      "point_count": 36
+    },
+    {
+      "path": "E:\\标定数值\\capture_20261028_213535_216.png",
+      "sha256": "8eb67148cbf42e4223ca933754c4aaef28525becc37b1b1fb101625adb6d7d23",
+      "point_count": 42
+    },
+    {
+      "path": "E:\\标定数值\\capture_20261028_213603_024.png",
+      "sha256": "5b00eb4200d32f4c248631228ffe86842bc2ac9fd13104abf3032e980b80660c",
+      "point_count": 35
+    },
+    {
+      "path": "E:\\标定数值\\capture_20261028_213703_598.png",
+      "sha256": "a1437fa9bc6184571e105ad37467f39581b886e620b53e5e48db82647230c125",
+      "point_count": 36
+    },
+    {
+      "path": "E:\\标定数值\\capture_20261028_213948_776.png",
+      "sha256": "760ed76bb8b6c4e33a306d56e784583ba572a4252d0fc437b29a410ec3793f90",
+      "point_count": 36
+    },
+    {
+      "path": "E:\\标定数值\\capture_20261028_214203_590.png",
+      "sha256": "e6e3a6e9de34c8a83c4b761c757fe932370061a11d822401c49df7bc07a821a7",
+      "point_count": 42
+    },
+    {
+      "path": "E:\\标定数值\\capture_20261028_213644_213.png",
+      "sha256": "143a0209317ec8d81ac2ab6528faf65c23efb683beb5c5aedd1bb20e39c3f391",
+      "point_count": 30
+    },
+    {
+      "path": "E:\\标定数值\\capture_20261028_213520_363.png",
+      "sha256": "fc49b632dd1908fb9179e80418275dc451e49dd46af38e8a2b7454e4107ccdbf",
+      "point_count": 42
+    },
+    {
+      "path": "E:\\标定数值\\capture_20261028_213453_685.png",
+      "sha256": "a43fd1f63f26aa93a6c60628db0af62c0e77c278503dae0698ea0b069b43bcd1",
+      "point_count": 35
+    },
+    {
+      "path": "E:\\标定数值\\capture_20261028_213810_142.png",
+      "sha256": "cc488c1c6737fde7f1d1a1a391f2cc9d75f059bede941af9580fc84255e3365a",
+      "point_count": 36
+    },
+    {
+      "path": "E:\\标定数值\\capture_20261028_214121_139.png",
+      "sha256": "521868373e70040e11afa9380506a27e1095c458ae7d54893138ea927272a68d",
+      "point_count": 36
+    },
+    {
+      "path": "E:\\标定数值\\capture_20261025_205133_362.png",
+      "sha256": "66dbcb31c43a4c50e6dabb6f99d3519ee1e60c8d18cae4dee1f14f3da9391560",
+      "point_count": 42
+    },
+    {
+      "path": "E:\\标定数值\\capture_20261028_214143_953.png",
+      "sha256": "98a0100ea10c1c9e6c06606b182afedb409bfea43b1d9a803936ad6a8f40b064",
+      "point_count": 36
+    },
+    {
+      "path": "E:\\标定数值\\capture_20261028_213737_992.png",
+      "sha256": "4fb978f0ce0f42682e5cdd2f8319ffd7af16784703825091e61380526511e29a",
+      "point_count": 36
+    }
   ],
-  "method": "checkerboard_single_frame_similarity_scale_initial",
-  "mm_per_pixel": 0.009683443764816625,
+  "notes": [
+    "用户确认单个黑格或白格边长10 mm；未提供证书实际格距或不确定度。",
+    "每帧单独估计平面内旋转和平移，共享一个mm/像素比例。",
+    "原图100像素安全边界、四象限黑白交替、格点排列检查；未按工件尺寸或残差挑选角点。",
+    "20张图包括3张旧图；近重复姿态另做分组及组权重敏感性分析。",
+    "留组检查仍使用同一块标定板，姿态在留出图上重新对齐，不是独立绝对准确度验证。",
+    "拟合残差、方法差异和跨图差异不能替代正式测量不确定度。",
+    "这是近正视平面尺度标定，没有估计完整相机内参或启用镜头畸变校正。",
+    "2026-10-29按用户要求启用为默认平面比例；仅用于已确认条件下的A内沿，外沿默认仍输出像素。"
+  ],
+  "method": "20_frame_checkerboard_shared_similarity_scale",
+  "mm_per_pixel": 0.009685371864397972,
   "installed_as_default": true,
-  "source_calibration": "图片检测结果/标定/20261023_棋盘格2mm_初步标定/calibration_scalar_initial.json"
+  "installed_date": "2026-10-29",
+  "source_calibration": "C:\\Users\\chyew\\Desktop\\38所军工文献调研\\视觉文献\\calibration_20_images_20261028\\calibration_scalar_candidate.json",
+  "source_calibration_sha256": "616b1ba2a41803b1b576b05c18c95e24f6200da65ad48479ffc67692220988e4"
 }

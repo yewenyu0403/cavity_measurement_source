@@ -254,6 +254,19 @@ def _texture_envelope_seed(gray, roi, settings):
                   "scope": "initialization only; original-resolution support thresholds unchanged"}
 
 
+def _refine_profile_offsets(gradient, offsets, path, valid_locations):
+    """Refine supported peaks; never send an evidence-free point to offset zero."""
+    centers = offsets[path]
+    local = np.abs(offsets[None, :]-centers[:, None]) <= 3
+    baseline = np.median(gradient, axis=1)[:, None]
+    weights = np.maximum(gradient-baseline, 0)*local*valid_locations
+    totals = weights.sum(axis=1)
+    has_evidence = totals > 1e-9
+    refined = centers.copy()
+    np.divide(np.sum(weights*offsets, axis=1), totals, out=refined, where=has_evidence)
+    return refined, has_evidence
+
+
 def find_opening(gray, roi=None, settings=None, allow_texture_seed=False, seed_override=None,
                  keep_review_candidates=False):
     """Return a closed contour and evidence in full-resolution x,y coordinates."""
@@ -292,18 +305,14 @@ def find_opening(gray, roi=None, settings=None, allow_texture_seed=False, seed_o
         gradient = -gradient
     gradient[~valid_locations] = -1000
     path = _continuous_path(gradient, step, close_cycle=allow_texture_seed)
-    center_offsets = offsets[path]
     strength = gradient[np.arange(len(path)), path]
     # A local derivative centroid refines the tracked edge, without assuming a
     # straight wall or fitting a circle through the rounded corners.
-    local = np.abs(offsets[None, :]-center_offsets[:, None]) <= 3
-    baseline = np.median(gradient, axis=1)[:, None]
-    weights = np.maximum(gradient-baseline, 0)*local*valid_locations
-    refined_offsets = np.sum(weights*offsets, axis=1)/np.maximum(weights.sum(axis=1), 1e-9)
+    refined_offsets, refinement_supported = _refine_profile_offsets(gradient, offsets, path, valid_locations)
     points = bases+refined_offsets[:, None]*normals
     supported = ((strength >= settings.min_gradient)
                  & (np.ptp(profiles, axis=1) >= settings.min_contrast)
-                 & (path > 6) & (path < len(offsets)-7))
+                 & (path > 6) & (path < len(offsets)-7) & refinement_supported)
     weak_arc = _longest_false_arc(supported)
     rect = cv2.minAreaRect(seed.astype(np.float32))
     box = cv2.boxPoints(rect).astype(float)
@@ -344,6 +353,7 @@ def find_opening(gray, roi=None, settings=None, allow_texture_seed=False, seed_o
                     "longest_weak_arc_fraction": float(weak_arc),
                     "median_gradient_gray_per_px": float(np.median(strength)),
                     "maximum_neighbor_step_px": float(neighbor_steps.max()),
+                    "refinement_without_evidence_count": int(np.count_nonzero(~refinement_supported)),
                     **({"review_reasons": reasons} if reasons else {})},
         "initialization": initialization, "settings": asdict(settings),
         "method": "black-hat dark band; convex seed; continuous grayscale profile tracking; local centroid",
